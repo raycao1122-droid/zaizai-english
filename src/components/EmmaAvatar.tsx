@@ -1,5 +1,6 @@
 import { Heart, Smile, Lightbulb, Sparkles, Volume2 } from "lucide-react";
 import type { VoiceState } from "../data/mockLesson";
+import { assetUrl } from "../lib/assets";
 
 export function EmmaAvatar({
   voice,
@@ -25,7 +26,7 @@ export function EmmaAvatar({
       >
         <img
           className="emma-image"
-          src="/assets/emma.svg"
+          src={assetUrl("emma.svg")}
           alt="Emma：棕色盘发、米白针织衫，拿着英语书向在在挥手"
         />
         <div className="emma-bubble">

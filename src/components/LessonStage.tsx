@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { animals, mockLesson, type AnimalId } from "../data/mockLesson";
 import { InteractiveMaterial } from "./InteractiveMaterial";
+import { assetUrl } from "../lib/assets";
 
 export function LessonStage({
   step,
@@ -74,14 +75,26 @@ export function LessonStage({
       </div>
       <div className="lesson-scene">
         <div className="garden-fragments" aria-hidden="true">
-          <img className="garden-left" src="/assets/garden-left.svg" alt="" />
-          <img className="garden-right" src="/assets/garden-right.svg" alt="" />
           <img
-            className="garden-canopy"
-            src="/assets/garden-canopy.svg"
+            className="garden-left"
+            src={assetUrl("garden-left.svg")}
             alt=""
           />
-          <img className="garden-grass" src="/assets/garden-grass.svg" alt="" />
+          <img
+            className="garden-right"
+            src={assetUrl("garden-right.svg")}
+            alt=""
+          />
+          <img
+            className="garden-canopy"
+            src={assetUrl("garden-canopy.svg")}
+            alt=""
+          />
+          <img
+            className="garden-grass"
+            src={assetUrl("garden-grass.svg")}
+            alt=""
+          />
         </div>
         <div className="scene-topline">
           <span className="lesson-tag">Look and Say</span>

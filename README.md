@@ -24,6 +24,17 @@ npm run test:e2e
 
 浏览器测试默认使用当前云环境自带的 `/usr/bin/chromium`，其他机器可通过 `CHROMIUM_PATH` 指定 Chromium 可执行文件。测试会启动或复用 5173 端口的开发服务器。截图保存在 `screenshots/`。
 
+## GitHub Pages 发布
+
+已为用户要求的 GitHub 部署准备自动发布工作流及仓库子路径资源适配。发布步骤、实际验证和当前网络阻塞见 [DEPLOYMENT.md](DEPLOYMENT.md)。这只是发布 M1，不开发下一阶段。
+
+```bash
+PAGES_BASE_PATH=/zaizai-english/ npm run build
+node scripts/check-pages.mjs
+```
+
+该检查会加载真实生产构建并验证子路径下的图片、点选反馈、面板和进度；不需要外部 API。
+
 ## 文件与迭代
 
 - `design/`：完整保留交接包的四份文档。

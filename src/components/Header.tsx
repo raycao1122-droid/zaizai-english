@@ -9,6 +9,7 @@ import {
   Star,
 } from "lucide-react";
 import { mockStudentProgress } from "../data/mockLesson";
+import { assetUrl } from "../lib/assets";
 
 export function Header({
   onNavigate,
@@ -64,7 +65,7 @@ export function Header({
         onClick={onSettings}
         aria-label="在在的课堂设置"
       >
-        <img src="/assets/student.svg" alt="在在的设计稿头像" />
+        <img src={assetUrl("student.svg")} alt="在在的设计稿头像" />
         <strong>在在</strong>
         <ChevronDown size={19} />
       </button>

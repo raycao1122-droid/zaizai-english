@@ -1,3 +1,5 @@
+import { assetUrl } from "../lib/assets";
+
 export type AnimalId = "dog" | "cat" | "bird" | "rabbit";
 export type VoiceState =
   | "speaking"
@@ -25,25 +27,25 @@ export const animals: {
     id: "dog",
     chinese: "小狗",
     hint: "Look for the puppy with floppy ears. 找一找垂着耳朵的小狗。",
-    image: "/assets/dog.svg",
+    image: assetUrl("dog.svg"),
   },
   {
     id: "cat",
     chinese: "小猫",
     hint: "Look for the kitten with whiskers. 找一找有胡须的小猫。",
-    image: "/assets/cat.svg",
+    image: assetUrl("cat.svg"),
   },
   {
     id: "bird",
     chinese: "小鸟",
     hint: "Look for the animal with blue wings. 找一找有蓝色翅膀的小动物。",
-    image: "/assets/bird.svg",
+    image: assetUrl("bird.svg"),
   },
   {
     id: "rabbit",
     chinese: "兔子",
     hint: "Look for the animal with long ears. 找一找长耳朵的小动物。",
-    image: "/assets/rabbit.svg",
+    image: assetUrl("rabbit.svg"),
   },
 ];
 

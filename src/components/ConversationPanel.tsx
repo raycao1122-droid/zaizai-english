@@ -9,6 +9,7 @@ import {
   Plus,
 } from "lucide-react";
 import { animals, type AnimalId, type Message } from "../data/mockLesson";
+import { assetUrl } from "../lib/assets";
 
 export function ConversationPanel({
   messages,
@@ -90,8 +91,8 @@ export function ConversationPanel({
                     className="message-avatar"
                     src={
                       message.speaker === "Emma"
-                        ? "/assets/emma-avatar.svg"
-                        : "/assets/student.svg"
+                        ? assetUrl("emma-avatar.svg")
+                        : assetUrl("student.svg")
                     }
                     alt={message.speaker}
                   />
