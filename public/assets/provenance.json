@@ -1,0 +1,86 @@
+[
+  {
+    "file": "emma.svg",
+    "source": "01_emma_character_reference.png",
+    "viewBox": [
+      0,
+      0,
+      579,
+      643
+    ],
+    "source_sha256": "bb7bcca9cf88521588537d19a59062e81ea7d04e0922eb0485fd0e5178903396",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "emma-avatar.svg",
+    "source": "01_emma_character_reference.png",
+    "viewBox": [
+      177,
+      50,
+      245,
+      245
+    ],
+    "source_sha256": "bb7bcca9cf88521588537d19a59062e81ea7d04e0922eb0485fd0e5178903396",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "student.svg",
+    "source": "02_classroom_layout_reference.png",
+    "viewBox": [
+      1366,
+      14,
+      55,
+      55
+    ],
+    "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "dog.svg",
+    "source": "02_classroom_layout_reference.png",
+    "viewBox": [
+      523,
+      356,
+      267,
+      148
+    ],
+    "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "cat.svg",
+    "source": "02_classroom_layout_reference.png",
+    "viewBox": [
+      835,
+      356,
+      267,
+      148
+    ],
+    "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "bird.svg",
+    "source": "02_classroom_layout_reference.png",
+    "viewBox": [
+      524,
+      580,
+      267,
+      148
+    ],
+    "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "rabbit.svg",
+    "source": "02_classroom_layout_reference.png",
+    "viewBox": [
+      835,
+      580,
+      267,
+      148
+    ],
+    "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
+    "method": "SVG viewport; unmodified original PNG embedded verbatim"
+  }
+]
