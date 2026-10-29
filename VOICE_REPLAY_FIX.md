@@ -15,3 +15,8 @@
 
 
 实服务验证：使用合成英文测试录音，百炼返回176640字节真实语音，音频结束事件与字幕item ID对应正确。输入是测试合成语音，不能当成孩子语音识别准确率的证明。前端也已验证兼容当前旧版中转（音频事件无item ID、无audio-complete事件），可用既有字幕ID和turn-ended关联回放，不要求用户为本次回听再做后台配置。
+
+
+完整链路额外验证：真实Chromium使用合成英文WAV作为测试麦克风，经过原生采样率AudioWorklet、当前已部署Render后端及真实百炼服务后，识别为 `Hello, Emma. I like dogs.`，本人的WAV片段可解码且为3.2秒；百炼返回 `That is wonderful. Do you have a favorite kind of dog?` 的4.16秒真实语音，浏览器点击后currentTime推进、处于播放状态，无脚本错误。云端Chromium证书限制下，网络部分使用保持正常TLS验证的Node中转连接实际后端，没有关闭TLS验证，也没有使用模型回复夹具。截图 [真实服务浏览器回听](screenshots/voice-replay/real-service-mobile.png)。这仍是合成输入和浏览器验证，不是用户手机硬件实测。
+
+已发布的前端代码提交 `b416ac9`，兼容当前 `508c092` 旧后端。后续此处仅补充验证记录与截图，不改变前端构建。
