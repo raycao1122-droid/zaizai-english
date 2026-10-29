@@ -6,6 +6,8 @@
 
 ## 运行
 
+只验收 M2 效果时，可使用交付的 `zaizai-english-m2-test.zip`：完整解压后，用电脑 Chrome 打开 `index.html`，不需要安装开发工具。该包为当前源代码生成的交互测试构建，不会同步本页修改；开发仍在本项目中继续。文件打开方式的验证限制见下文。
+
 电脑本地开发先看 [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)。Mac 安装 Node.js 24 LTS 后，双击项目根目录的 `start-local.command`，或在该文件夹终端执行 `bash start-local.command`，会安装依赖并打开本机课堂。
 
 环境使用 Node.js 24.19.0 / npm 11.9.0。
@@ -36,6 +38,17 @@ node scripts/check-pages.mjs
 ```
 
 该检查会加载真实生产构建并验证子路径下的图片、点选反馈、面板和进度；不需要外部 API。
+
+## 离线验收包
+
+```bash
+npm run build:offline
+npm run test:offline
+```
+
+输出在 `.local-cache/offline-preview/`。使用普通脚本、相对图片路径和内嵌字体，保留原始图像字节；不依赖开发服务器或外部网络。分发时将整个目录一起压缩，用户必须完整解压后打开 `index.html`。原始 PNG 和来源记录仍保留在项目中；包内 SVG 已嵌入原图，省略未使用的重复 PNG 副本。
+
+已从交付 ZIP 实际解压并用静态服务器验证 11 环节、图片、纠音重试、报告 CSV 和文件信息登记，无外部请求或浏览器错误。云端 Chromium 的管理策略禁止 `file://` 导航，未绕过该策略，因此双击文件方式及 Mac/Safari 尚未实际验证。
 
 ## 文件与迭代
 

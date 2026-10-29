@@ -75,3 +75,11 @@
 启动方式沿用 README、`start-local.command` 和 `LOCAL_DEVELOPMENT.md`。课堂数据、流程、模拟报告和状态更新分别在 `src/data/`、`src/hooks/useClassroom.ts` 和独立组件中维护。
 
 代码与截图按里程碑提交同一个 Git 仓库。当前仍是云环境中的开发版本，GitHub Pages 的源码/发布准备已经存在，但远端仓库与网站尚未确认上线。M2 完成后等待用户验收，不自行进入 M3。
+
+## 电脑离线验收包
+
+针对用户询问测试入口，补充 `zaizai-english-m2-test.zip`（27,480,057 字节）。完整解压，用电脑 Chrome 打开 `index.html`；无需 Node/Git。此包只用于测试，不会将本页笔记或操作同步至云端。持续开发仍使用原项目和 Git。
+
+`scripts/build-offline-preview.mjs` 从同一 M2 源码生成普通 IIFE 脚本、相对资源和内嵌字体；保留原图素材，不新增功能或接入 M3。`scripts/check-offline-preview.mjs` 已对实际 ZIP 解压文件通过 11 环节、素材解码、对错反馈、模拟重试、CSV 下载内容和资料登记检查，未出现页面错误、资源失败、外部网络请求或上传。
+
+云端 Chromium 直接打开文件时返回 `ERR_BLOCKED_BY_ADMINISTRATOR`；未绕过管理策略。上述交互验证通过临时静态服务器加载同一批文件完成，双击文件方式及用户的 Mac/Safari 仍待实际验收。公网网址尚未发布。
