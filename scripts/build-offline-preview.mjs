@@ -35,7 +35,7 @@ const styles = (await readdir(join(outDir, "assets"))).filter((name) =>
 );
 await writeFile(
   join(outDir, "index.html"),
-  `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>在在的英语课堂 · M2 离线测试</title>${styles.map((name) => `<link rel="stylesheet" href="./assets/${name}">`).join("")}</head><body><div id="root"></div><script defer src="./classroom.js"></script></body></html>`,
+  `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"><title>在在的英语课堂 · M2 离线测试</title>${styles.map((name) => `<link rel="stylesheet" href="./assets/${name}">`).join("")}</head><body><div id="root"></div><script defer src="./classroom.js"></script></body></html>`,
 );
 await writeFile(
   join(outDir, "使用说明.txt"),

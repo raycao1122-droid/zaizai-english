@@ -30,7 +30,15 @@ export function Modal({
       aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target !== e.currentTarget) return;
+        const bounds = e.currentTarget.getBoundingClientRect();
+        if (
+          e.clientX < bounds.left ||
+          e.clientX > bounds.right ||
+          e.clientY < bounds.top ||
+          e.clientY > bounds.bottom
+        )
+          onClose();
       }}
     >
       <div className="modal-heading">
@@ -39,7 +47,7 @@ export function Modal({
           <X size={23} />
         </button>
       </div>
-      {children}
+      <div className="modal-body">{children}</div>
     </dialog>
   );
 }

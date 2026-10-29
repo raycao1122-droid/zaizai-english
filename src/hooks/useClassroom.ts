@@ -24,6 +24,7 @@ export type ChoiceEvidence = {
 };
 export type ClassroomState = {
   step: number;
+  lastLessonStep: number;
   selected: AnimalId | null;
   hint: boolean;
   learnedAnimal: AnimalId;
@@ -76,6 +77,7 @@ type Action =
 function initialState(): ClassroomState {
   return {
     step: 0,
+    lastLessonStep: 0,
     selected: null,
     hint: false,
     learnedAnimal: "dog",
@@ -242,6 +244,7 @@ function reducer(state: ClassroomState, action: Action): ClassroomState {
       const next = {
         ...state,
         step: action.index,
+        lastLessonStep: action.index < 9 ? action.index : state.lastLessonStep,
         selected: null,
         hint: false,
         collapsed: action.index >= 9 ? true : state.collapsed,

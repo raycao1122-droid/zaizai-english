@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import {
   ArrowRight,
   Bookmark,
@@ -12,19 +12,42 @@ import {
   type MockSession,
 } from "../data/mockReports";
 import { animals } from "../data/mockLesson";
+import { navigateTabs } from "../lib/tabNavigation";
+
+export type ArchiveView = {
+  tab: "progress" | "pronunciation" | "review" | "history";
+  limit: number;
+  selected: string;
+  scrollTop: number;
+};
+
+export function createArchiveView(): ArchiveView {
+  return {
+    tab: "progress",
+    limit: 5,
+    selected: mockHistory[0].id,
+    scrollTop: 0,
+  };
+}
 
 export function LearningArchive({
+  view,
+  onViewChange,
   reviewed,
   onReview,
   onOpenReport,
 }: {
+  view: ArchiveView;
+  onViewChange: (patch: Partial<ArchiveView>) => void;
   reviewed: string[];
   onReview: (word: string) => void;
   onOpenReport: (session: MockSession) => void;
 }) {
-  const [tab, setTab] = useState("progress");
-  const [limit, setLimit] = useState(5);
-  const [selected, setSelected] = useState(mockHistory[0].id);
+  const { tab, limit, selected, scrollTop } = view;
+  const container = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (container.current) container.current.scrollTop = scrollTop;
+  }, [tab, scrollTop]);
   const history = mockHistory.slice(0, limit).reverse();
   const metric = tab === "pronunciation" ? "pronunciation" : "vocabulary";
   const points = history.map((item, index) => ({
@@ -34,7 +57,11 @@ export function LearningArchive({
   }));
   const selectedSession = mockHistory.find((item) => item.id === selected)!;
   return (
-    <section className="learning-archive" aria-label="长期英语档案">
+    <section
+      ref={container}
+      className="learning-archive"
+      aria-label="长期英语档案"
+    >
       <div className="report-heading">
         <div>
           <span className="stage-kicker">ZAIZAI’S LEARNING JOURNEY</span>
@@ -43,21 +70,29 @@ export function LearningArchive({
         </div>
         <span className="simulation-label">模拟历史 · 非真实学习数据</span>
       </div>
-      <div className="report-tabs" role="tablist" aria-label="学习档案内容">
-        {[
-          { id: "progress", text: "学习进度" },
-          { id: "pronunciation", text: "发音成长" },
-          { id: "review", text: "错题与复习" },
-          { id: "history", text: "课堂记录" },
-        ].map((item) => (
+      <div
+        className="report-tabs"
+        role="tablist"
+        aria-label="学习档案内容"
+        onKeyDown={navigateTabs}
+      >
+        {(
+          [
+            { id: "progress", text: "学习进度" },
+            { id: "pronunciation", text: "发音成长" },
+            { id: "review", text: "错题与复习" },
+            { id: "history", text: "课堂记录" },
+          ] as const
+        ).map((item) => (
           <button
             key={item.id}
             role="tab"
             aria-selected={tab === item.id}
+            tabIndex={tab === item.id ? 0 : -1}
             aria-controls={`archive-${item.id}`}
             id={`archive-tab-${item.id}`}
             className={tab === item.id ? "active" : ""}
-            onClick={() => setTab(item.id)}
+            onClick={() => onViewChange({ tab: item.id, scrollTop: 0 })}
           >
             {item.text}
           </button>
@@ -67,6 +102,7 @@ export function LearningArchive({
         role="tabpanel"
         id={`archive-${tab}`}
         aria-labelledby={`archive-tab-${tab}`}
+        tabIndex={0}
       >
         {(tab === "progress" || tab === "pronunciation") && (
           <>
@@ -80,13 +116,12 @@ export function LearningArchive({
                   <button
                     key={count}
                     onClick={() => {
-                      setLimit(count);
-                      if (
-                        !mockHistory
-                          .slice(0, count)
-                          .some((item) => item.id === selected)
-                      )
-                        setSelected(mockHistory[0].id);
+                      const nextSelected = mockHistory
+                        .slice(0, count)
+                        .some((item) => item.id === selected)
+                        ? selected
+                        : mockHistory[0].id;
+                      onViewChange({ limit: count, selected: nextSelected });
                     }}
                     aria-pressed={limit === count}
                     className={limit === count ? "active" : ""}
@@ -143,7 +178,7 @@ export function LearningArchive({
                 {history.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => setSelected(item.id)}
+                    onClick={() => onViewChange({ selected: item.id })}
                     className={selected === item.id ? "active" : ""}
                     aria-pressed={selected === item.id}
                   >
@@ -186,7 +221,12 @@ export function LearningArchive({
                 </div>
                 <button
                   className="soft-button"
-                  onClick={() => onOpenReport(item)}
+                  onClick={() => {
+                    onViewChange({
+                      scrollTop: container.current?.scrollTop ?? 0,
+                    });
+                    onOpenReport(item);
+                  }}
                 >
                   查看模拟报告
                   <ArrowRight size={15} />

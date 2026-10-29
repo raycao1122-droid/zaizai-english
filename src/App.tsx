@@ -14,7 +14,10 @@ import { ClassroomActivities } from "./components/ClassroomActivities";
 import { ConversationPanel } from "./components/ConversationPanel";
 import { VoiceControlBar } from "./components/VoiceControlBar";
 import { ParentLessonReport } from "./components/ParentLessonReport";
-import { LearningArchive } from "./components/LearningArchive";
+import {
+  LearningArchive,
+  createArchiveView,
+} from "./components/LearningArchive";
 import { CurriculumLibrary } from "./components/CurriculumLibrary";
 import { WordBook } from "./components/WordBook";
 import { Modal } from "./components/Modal";
@@ -38,6 +41,8 @@ export default function App() {
   const [reportSession, setReportSession] = useState<MockSession>(
     mockHistory[0],
   );
+  const [archiveView, setArchiveView] = useState(createArchiveView);
+  const [reportFromArchive, setReportFromArchive] = useState(false);
   const voice = state.paused
     ? "paused"
     : state.muted
@@ -49,12 +54,16 @@ export default function App() {
     setToast("音频播放状态模拟：尚未接入音频或语音 API。");
   }
 
-  function navigate(index: number) {
+  function navigate(index: number, historicalSession?: MockSession) {
     if (state.paused) {
       setToast("课堂已暂停，请先继续课堂后切换环节。");
       return false;
     }
     if (state.exited) dispatch({ type: "resume" });
+    if (index === 9) {
+      setReportSession(historicalSession ?? mockHistory[0]);
+      setReportFromArchive(Boolean(historicalSession));
+    }
     dispatch({ type: "navigate", index });
     setToast("");
     return true;
@@ -62,6 +71,8 @@ export default function App() {
   function reset() {
     dispatch({ type: "reset" });
     setReportSession(mockHistory[0]);
+    setReportFromArchive(false);
+    setArchiveView(createArchiveView());
     setToast("演示已重置，当前课堂草稿和笔记已清空。");
   }
   function review(word: string) {
@@ -73,10 +84,9 @@ export default function App() {
   }
   function headerNavigate(name: string) {
     if (name === "上课") {
-      dispatch({ type: "resume" });
-      if (state.step >= 8) dispatch({ type: "navigate", index: 3 });
+      if (state.exited) dispatch({ type: "resume" });
+      else if (state.step >= 9) navigate(state.lastLessonStep);
     } else if (name === "学习报告") {
-      setReportSession(mockHistory[0]);
       navigate(9);
     } else setModal(name);
   }
@@ -150,14 +160,18 @@ export default function App() {
                   session={reportSession}
                   onAudio={audio}
                   onArchive={() => navigate(10)}
+                  fromArchive={reportFromArchive}
                 />
               ) : context.step.id === "archive" ? (
                 <LearningArchive
+                  view={archiveView}
+                  onViewChange={(patch) =>
+                    setArchiveView((current) => ({ ...current, ...patch }))
+                  }
                   reviewed={reviewed}
                   onReview={review}
                   onOpenReport={(session) => {
-                    setReportSession(session);
-                    navigate(9);
+                    navigate(9, session);
                   }}
                 />
               ) : (
@@ -180,7 +194,6 @@ export default function App() {
                   onStart={() => navigate(1)}
                   onReset={reset}
                   onReport={() => {
-                    setReportSession(mockHistory[0]);
                     navigate(9);
                   }}
                 />

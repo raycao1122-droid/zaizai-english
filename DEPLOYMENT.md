@@ -8,7 +8,13 @@
 
 本网站为用户授权发布的 M2 模拟课堂，不访问真实设备或 AI API。完整 11 环节、Emma 与原始动物素材、模拟纠音、报告和档案均沿用同一个项目。M3 的真实服务尚未接入。
 
-## 已完成的验证
+## M2 界面完善的发布检查
+
+同一 M2 项目继续完善手机和平板显示、暂停/返回、报告与弹窗交互，仍使用既有工作流发布至同一网址。当前源代码已通过 39 项浏览器检查、生产构建和严格 Pages 子路径检查。运行截图、具体修改及安卓封装范围见 `M2_DELIVERY.md` 和 `ANDROID_PREPARATION.md`。
+
+最新部署结果可查看：https://github.com/raycao1122-droid/zaizai-english/actions/workflows/pages.yml
+
+## 首次上线的验证记录
 
 - 用户已启用 Pages，并将发布来源设为 GitHub Actions；API 确认为 `build_type: workflow`。
 - GitHub Actions 运行 `40815096141` 重试失败的部署步骤后成功，安装、生产构建、上传产物及部署均通过。运行记录：https://github.com/raycao1122-droid/zaizai-english/actions/runs/40815096141

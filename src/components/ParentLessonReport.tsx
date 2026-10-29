@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   BookOpen,
+  ArrowLeft,
   Check,
   Download,
   Lightbulb,
@@ -15,15 +16,18 @@ import {
   type MockSession,
 } from "../data/mockReports";
 import { exportMockReport } from "../lib/exportReport";
+import { navigateTabs } from "../lib/tabNavigation";
 
 export function ParentLessonReport({
   session,
   onAudio,
   onArchive,
+  fromArchive = false,
 }: {
   session: MockSession;
   onAudio: () => void;
   onArchive: () => void;
+  fromArchive?: boolean;
 }) {
   const [tab, setTab] = useState("summary");
   const tabs = [
@@ -35,6 +39,11 @@ export function ParentLessonReport({
   ];
   return (
     <section className="parent-report" aria-label="家长学习报告">
+      {fromArchive && (
+        <button className="report-return" onClick={onArchive}>
+          <ArrowLeft size={16} /> 返回学习档案
+        </button>
+      )}
       <div className="report-heading">
         <div>
           <span className="stage-kicker">PARENT LESSON REPORT</span>
@@ -55,12 +64,18 @@ export function ParentLessonReport({
         <span className="simulation-label">全部数据为模拟</span>
         <p>未采集真实音频，不代表在在的实际成绩、发音水平或掌握程度。</p>
       </div>
-      <div className="report-tabs" role="tablist" aria-label="学习报告内容">
+      <div
+        className="report-tabs"
+        role="tablist"
+        aria-label="学习报告内容"
+        onKeyDown={navigateTabs}
+      >
         {tabs.map((item) => (
           <button
             key={item.id}
             role="tab"
             aria-selected={tab === item.id}
+            tabIndex={tab === item.id ? 0 : -1}
             aria-controls={`report-${item.id}`}
             id={`report-tab-${item.id}`}
             className={tab === item.id ? "active" : ""}
@@ -75,6 +90,7 @@ export function ParentLessonReport({
         role="tabpanel"
         id={`report-${tab}`}
         aria-labelledby={`report-tab-${tab}`}
+        tabIndex={0}
       >
         {tab === "summary" && (
           <div className="report-columns">
@@ -255,7 +271,7 @@ export function ParentLessonReport({
       <div className="report-bottom">
         <span>模拟学习报告 · 无正式数据库</span>
         <button className="soft-button" onClick={onArchive}>
-          查看学习档案
+          {fromArchive ? "返回学习档案" : "查看学习档案"}
         </button>
       </div>
     </section>

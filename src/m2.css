@@ -651,6 +651,22 @@
   border-radius: 12px;
   background: #edf3fd;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 5px 0 4px #f7fbff;
+}
+.report-return {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 7px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: #327ef3;
+  font-size: 12px;
+  font-weight: 700;
 }
 .report-tabs button {
   flex: 1;
@@ -1235,8 +1251,8 @@
   color: #4f729f;
 }
 .directory-list {
-  max-height: 54vh;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   scrollbar-width: thin;
   padding: 2px;
 }
@@ -2055,5 +2071,533 @@
   }
   .stage-review .question-line h1 {
     font-size: 23px;
+  }
+}
+
+/* Keep the original three classroom areas in view on landscape iPads.
+   Taller/portrait layouts retain the existing stacked arrangement. */
+@media (min-width: 900px) and (max-width: 1100px) and (min-height: 700px) and (orientation: landscape) {
+  .app-shell {
+    height: 100dvh;
+    min-height: 700px;
+    overflow: hidden;
+    padding-bottom: 16px;
+    gap: 10px;
+  }
+  .header {
+    min-height: 0;
+    padding: 8px 12px;
+    gap: 4px 10px;
+  }
+  .header nav {
+    height: 34px;
+  }
+  .brand strong {
+    font-size: 18px;
+  }
+  .brand small {
+    font-size: 10px;
+  }
+  .profile img {
+    width: 36px;
+    height: 36px;
+  }
+  .nav-item {
+    font-size: 13px;
+  }
+  .classroom-layout {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(190px, 23fr) minmax(380px, 52fr) minmax(
+        220px,
+        25fr
+      );
+  }
+  .classroom-layout.panel-collapsed {
+    grid-template-columns: minmax(190px, 23fr) minmax(380px, 77fr);
+  }
+  .classroom-layout > .emma-panel,
+  .classroom-layout > .lesson-panel {
+    height: auto;
+  }
+  .conversation-panel {
+    grid-column: auto;
+    min-height: 0;
+    max-height: none;
+  }
+  .panel-body {
+    max-height: none;
+    padding-top: 11px;
+  }
+  .panel-tabs button:not(.active) span {
+    display: none;
+  }
+  .panel-tabs button.active {
+    flex: 2.5;
+  }
+  .message {
+    max-width: 100%;
+  }
+  .student-message {
+    max-width: 90%;
+  }
+  .message-bubble {
+    font-size: 13px;
+    padding: 10px;
+  }
+  .message-avatar {
+    width: 32px;
+    height: 37px;
+  }
+  .message-label {
+    font-size: 12px;
+  }
+  .emma-bubble {
+    font-size: 14px;
+    padding: 12px;
+  }
+  .emma-moods {
+    height: 66px;
+  }
+  .emma-moods small {
+    font-size: 10px;
+  }
+  .emma-name strong {
+    font-size: 18px;
+  }
+  .emma-name span {
+    font-size: 10px;
+  }
+  .voice-bar {
+    position: static;
+    z-index: auto;
+  }
+  .lesson-toolbar {
+    height: 54px;
+    gap: 7px;
+  }
+  .unit-selector {
+    font-size: 12px;
+    gap: 5px;
+    padding: 10px 7px;
+  }
+  .lesson-progress {
+    font-size: 11px;
+  }
+  .directory-button {
+    padding: 8px;
+  }
+  .directory-button span {
+    display: none;
+  }
+  .lesson-scene {
+    padding: 10px 16px 14px;
+  }
+  .scene-topline {
+    gap: 6px;
+    min-height: 28px;
+  }
+  .lesson-tag {
+    font-size: 13px;
+    padding: 5px 9px;
+  }
+  .activity-description {
+    font-size: 10px;
+  }
+  .scene-topline .demo-badge {
+    font-size: 8px;
+  }
+  .question-line {
+    margin-top: 7px;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .question-line h1,
+  .stage-review .question-line h1 {
+    font-size: 23px;
+    letter-spacing: -0.7px;
+  }
+  .question-line .audio-button {
+    width: 31px;
+    height: 31px;
+  }
+  .help-line {
+    min-height: 32px;
+  }
+  .question-translation {
+    font-size: 12px;
+    padding: 3px 10px 6px;
+  }
+  .hint-button {
+    font-size: 10px;
+    padding: 7px;
+    right: -6px;
+  }
+  .feedback-space {
+    height: 27px;
+    min-height: 27px;
+    margin-bottom: 8px;
+  }
+  .feedback,
+  .choose-note,
+  .hint-text {
+    font-size: 10px;
+  }
+  .animal-grid {
+    gap: 13px;
+  }
+  .animal-card {
+    border-radius: 18px;
+  }
+  .animal-word {
+    font-size: 18px;
+    min-height: 31px;
+    margin: 0 9px 4px;
+  }
+  .question-switch {
+    font-size: 10px;
+    margin-bottom: -7px;
+  }
+  .activity-scene {
+    padding: 10px;
+  }
+  .activity-card {
+    padding: 14px;
+    gap: 11px;
+    justify-content: safe center;
+  }
+  .activity-card > * {
+    flex-shrink: 0;
+  }
+  .activity-prompt h1 {
+    font-size: 25px;
+  }
+  .activity-prompt > p {
+    font-size: 12px;
+  }
+  .stage-kicker {
+    font-size: 9px;
+  }
+  .activity-heading {
+    gap: 6px;
+  }
+  .simulation-label {
+    font-size: 8px;
+    padding: 4px 7px;
+  }
+  .welcome-emma {
+    width: 54px;
+    height: 54px;
+  }
+  .welcome-stage h1 {
+    font-size: 30px;
+  }
+  .welcome-stage > p:not(.stage-footnote) {
+    font-size: 12px;
+  }
+  .welcome-animals {
+    gap: 6px;
+  }
+  .welcome-animals img {
+    width: 55px;
+    height: 40px;
+  }
+  .welcome-stage .primary-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  .greeting-avatar {
+    width: 68px;
+    height: 68px;
+  }
+  .greeting-choices button {
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+  .featured-animal {
+    min-height: 120px;
+    max-height: 190px;
+  }
+  .vocabulary-thumbnails img {
+    height: 38px;
+  }
+  .vocabulary-thumbnails strong {
+    font-size: 13px;
+  }
+  .stage-footnote {
+    font-size: 9px !important;
+  }
+  .pronunciation-word {
+    min-height: 52px;
+  }
+  .pronunciation-word > span:first-child {
+    font-size: 43px;
+  }
+  .phonetic {
+    font-size: 18px;
+  }
+  .wave-comparison > div {
+    padding: 8px;
+    gap: 5px;
+  }
+  .demo-wave {
+    height: 32px;
+  }
+  .pronunciation-tips {
+    padding: 11px;
+  }
+  .pronunciation-tips h2 {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .pronunciation-tips li {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .pronunciation-actions .primary-button {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .demo-result {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .sentence-picture img {
+    height: 110px;
+  }
+  .sentence-picture strong {
+    font-size: 22px;
+  }
+  .sentence-choices button {
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+  .pet-options {
+    gap: 7px;
+  }
+  .pet-options img {
+    height: 100px;
+  }
+  .pet-options span {
+    font-size: 11px;
+    min-height: 55px;
+  }
+  .scenario-invitation {
+    font-size: 13px;
+  }
+  .scenario-language {
+    padding: 10px;
+  }
+  .scenario-language strong {
+    font-size: 18px;
+  }
+  .summary-stage h1 {
+    font-size: 28px;
+  }
+  .summary-stage > p {
+    font-size: 11px;
+  }
+  .summary-words img {
+    height: 35px;
+  }
+  .summary-trophy > svg:first-child {
+    width: 40px;
+    height: 40px;
+  }
+  .summary-actions button {
+    padding: 10px !important;
+    font-size: 11px !important;
+  }
+  .session-evidence {
+    padding: 9px;
+  }
+  .session-evidence > span {
+    font-size: 12px;
+  }
+  .report-scene {
+    padding: 0;
+  }
+}
+
+/* Safe areas and scroll fallback for the shared web / future Android view. */
+.app-shell {
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(13px, env(safe-area-inset-left));
+  padding-right: max(13px, env(safe-area-inset-right));
+  padding-bottom: max(17px, env(safe-area-inset-bottom));
+}
+@media (min-width: 1401px) {
+  .app-shell {
+    padding-left: max(19px, env(safe-area-inset-left));
+    padding-right: max(19px, env(safe-area-inset-right));
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+}
+.modal {
+  max-height: min(
+    85vh,
+    calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+  );
+}
+@media (max-width: 1100px) and (max-height: 699px) {
+  .voice-bar {
+    position: relative;
+    bottom: auto;
+  }
+}
+@media (max-width: 680px) {
+  .header nav {
+    height: 44px;
+  }
+  .nav-item,
+  .profile {
+    min-height: 44px;
+  }
+  .lesson-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 90px;
+    padding: 8px 0;
+  }
+  .unit-selector {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+  }
+  .unit-selector span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lesson-progress {
+    order: 3;
+    flex: 0 0 100%;
+    min-width: 0;
+  }
+  .lesson-progress span {
+    font-size: 11px !important;
+  }
+  .directory-button,
+  .expand-panel,
+  .collapse-button,
+  .small-audio,
+  .audio-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .question-line h1,
+  .stage-review .question-line h1 {
+    white-space: normal;
+    font-size: clamp(21px, 6vw, 25px);
+  }
+  .question-line .audio-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .question-translation {
+    white-space: normal;
+    text-align: center;
+  }
+  .panel-tabs button,
+  .report-tabs button,
+  .period-switch button,
+  .review-mark,
+  .word-filter button,
+  .chart-dates button,
+  .material-row .soft-button {
+    min-height: 44px;
+  }
+  .chart-dates button {
+    min-width: 44px;
+  }
+  .chat-input input,
+  .notes-content textarea,
+  .library-toolbar input:not([type="file"]) {
+    font-size: 16px;
+  }
+  .voice-bar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 8px;
+  }
+  .device-controls {
+    grid-column: 1 / 3;
+    justify-content: flex-start;
+  }
+  .device-controls button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .voice-center {
+    grid-column: 3;
+    min-width: 0;
+    margin-bottom: 15px;
+  }
+  .speed-control {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+  .speed-control button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .exit-button,
+  .reset-button,
+  .next-button {
+    min-width: 0;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .toast {
+    bottom: max(15px, env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 900px) and (max-width: 1100px) and (min-height: 700px) and (orientation: landscape) {
+  .panel-collapsed .report-columns {
+    grid-template-columns: 1.1fr 1fr;
+  }
+  .learning-archive {
+    gap: 12px;
+    padding: 16px;
+  }
+  .archive-chart svg {
+    max-height: 170px;
+  }
+}
+@media (min-width: 681px) and (max-width: 900px) and (max-height: 699px) {
+  .voice-bar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 112px;
+  }
+  .voice-center {
+    min-width: 140px;
+  }
+  .lesson-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 0;
+  }
+  .unit-selector {
+    flex: 1;
+    min-width: 0;
+  }
+  .unit-selector span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lesson-progress {
+    flex: 0 0 100%;
+    order: 3;
+  }
+  .question-line h1,
+  .stage-review .question-line h1 {
+    font-size: 25px;
+    white-space: normal;
+  }
+}
+@media (max-width: 680px) {
+  .toast button {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

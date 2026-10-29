@@ -15,6 +15,7 @@ import {
   type PanelTab,
 } from "../data/mockLesson";
 import { assetUrl } from "../lib/assets";
+import { navigateTabs } from "../lib/tabNavigation";
 
 export function ConversationPanel({
   messages,
@@ -63,11 +64,17 @@ export function ConversationPanel({
       hidden={hidden}
     >
       <div className="panel-top">
-        <div className="panel-tabs" role="tablist" aria-label="辅助面板内容">
+        <div
+          className="panel-tabs"
+          role="tablist"
+          aria-label="辅助面板内容"
+          onKeyDown={navigateTabs}
+        >
           {tabs.map(({ id, label, Icon }) => (
             <button
               role="tab"
               aria-selected={tab === id}
+              tabIndex={tab === id ? 0 : -1}
               aria-controls={`panel-${id}`}
               id={`tab-${id}`}
               key={id}
@@ -93,6 +100,7 @@ export function ConversationPanel({
         role="tabpanel"
         id={`panel-${tab}`}
         aria-labelledby={`tab-${tab}`}
+        tabIndex={0}
       >
         {tab === "conversation" && (
           <>

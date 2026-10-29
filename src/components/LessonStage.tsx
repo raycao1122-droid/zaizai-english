@@ -49,7 +49,11 @@ export function LessonStage({
             />
           </div>
         </div>
-        <button className="directory-button" onClick={onDirectory}>
+        <button
+          className="directory-button"
+          aria-label="课程目录"
+          onClick={onDirectory}
+        >
           <ListTree size={17} />
           <span>课程目录</span>
         </button>
