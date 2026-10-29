@@ -60,8 +60,11 @@ try {
   });
   const errors = [];
   const badResponses = [];
+  let unavailableVoiceBackend = 0;
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("response", (response) => {
+    // A standalone Pages deployment has no API; verify its explicit unavailable UI.
+    if (response.status() === 404 && new URL(response.url()).pathname === "/api/voice/config") { unavailableVoiceBackend++; return; }
     if (response.status() >= 400)
       badResponses.push(`${response.status()} ${response.url()}`);
   });
@@ -90,6 +93,11 @@ try {
     await validateImages();
   }
   await validateImages();
+  await page.getByRole("combobox", { name: "实时语音模型" }).waitFor();
+  await page.getByRole("button", { name: "AI 服务配置", exact: true }).click();
+  await page.getByText("语音后端尚未连接。GitHub Pages 只提供网页，请先配置 HTTPS 后端地址。").waitFor();
+  assert(unavailableVoiceBackend > 0, "Static-only deployment should report the missing backend");
+  await page.getByRole("button", { name: "关闭弹窗", exact: true }).click();
   await stage(3);
   await page.getByRole("button", { name: "选择 dog", exact: true }).click();
   assert(
@@ -118,7 +126,7 @@ try {
   assert.deepEqual(errors, [], "Production browser errors");
   assert.deepEqual(badResponses, [], "Production asset failures");
   console.log(
-    `PASS: production build at ${prefix}; all artwork uses the prefix; M2 animal feedback, pronunciation demo, scenario, reports and archive work; no failed requests or browser errors.`,
+    `PASS: production build at ${prefix}; all artwork uses the prefix; M2 animal feedback, pronunciation demo, scenario, reports and archive work; no failed assets or browser errors; missing voice backend is explicitly labelled.`,
   );
 } finally {
   if (browser) await browser.close();

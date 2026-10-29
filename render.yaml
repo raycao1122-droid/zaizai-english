@@ -1,11 +1,11 @@
-# Review-only deployment template. No service has been created.
+# Free-plan deployment template. No service has been created from this environment.
 # Confirm pricing and the Free plan in Render before manual creation.
 services:
   - type: web
     name: zaizai-classroom-api
     runtime: node
     plan: free
-    branch: m3-text-integration
+    branch: main
     autoDeployTrigger: off
     buildCommand: npm ci --omit=dev
     startCommand: npm run start:api
