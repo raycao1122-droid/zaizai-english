@@ -32,8 +32,10 @@ npm run test:e2e
 
 ## 当前外部阻塞
 
-Git HTTPS 读取正常。`gh api user` 请求及对 GitHub API 的 HTTPS CONNECT 均被云环境代理返回 403；运行时自定义域名允许列表中没有 `api.github.com`。
+2026-10-29 用户应用环境设置后，运行时网络模式已为 `unrestricted`，状态为 `enforced`，观测为当前值。GitHub API 已连通；`gh api user` 成功确认账号为 `raycao1122-droid`。此前的域名网络阻塞已解除，无需重复添加域名。
 
-已将 `api.github.com` 和预期账号站点验证所需的 `raycao1122-droid.github.io` 添加到环境配置草稿。草稿保存不等于运行时已应用；需要在环境设置中保存并发布，再检查实际运行时规则和 GitHub API。
+读取 `raycao1122-droid/zaizai-english` 返回 404，尚不能确认存在可访问的目标仓库。按已授权的发布要求尝试创建独立公开仓库：`gh repo create` 的 GraphQL `createRepository` 被拒绝；标准 REST `POST /user/repos` 同样返回 HTTP 403、`Resource not accessible by integration`。这次失败来自 GitHub 集成权限，不是云端网络拒绝。
 
-尚未验证 GitHub API 的账号身份、创建仓库权限、推送权限、Pages 设置和发布结果，不能声称已经部署。没有创建远端仓库，也没有修改 ContentFlow 的 GitHub 设置。网络放行后仍需分别验证上述操作，而不是假定 Git 读取成功等于 API 或发布权限可用。
+下一步需用户在 GitHub 创建 `raycao1122-droid/zaizai-english` 空的公开仓库，不预建 README、许可或 .gitignore，以保留当前项目完整历史。创建后重新验证 API 和 Git HTTPS 的访问权限；如现有集成不能访问新仓库，再明确指出需要授权的仓库范围，不要求在聊天中提供 Token。
+
+尚未设置远端、推送代码、配置 Pages 或确认网站上线；没有修改 ContentFlow。仓库可访问后，继续上述操作顺序并验证最终真实网址。
