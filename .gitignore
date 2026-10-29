@@ -9,3 +9,5 @@ playwright-report/
 demo/raw/
 demo/*.webm
 .local-cache/
+__pycache__/
+*.py[cod]
