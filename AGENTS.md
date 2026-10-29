@@ -4,7 +4,7 @@
 - 开始前阅读 `design/CODEX_START_HERE.md`、`design/FRONTEND_SPEC.md`、`design/ACCEPTANCE_CHECKLIST.md` 和 `M1_DELIVERY.md`。
 - 视觉优先级：02 课堂布局 > 01 Emma 外貌 > 03 流程；不得替换原始人物或把整页设计图当界面。
 - 已确认的冲突解决：底部采用连续语音状态模拟，不采用按住说话。不请求真实设备权限。
-- M1 验收前不得自行实现 M2/M3。后续只有用户明确批准才扩展阶段。
+- 用户已于 2026-10-29 明确批准开始 M2。当前范围为完整 11 环节、模拟发音纠正、课后报告、模拟学习档案和教材入口；沿用 M1，不重做产品。M3 的真实 AI、语音、评分、人物驱动与后端仍需另行授权。
 - 保留原始 PNG 和来源记录。生成取景文件使用 `python3 scripts/prepare_assets.py`。无透明立绘、模型及独立花园背景；限制见交付文档，不能宣称数字人驱动或像素级完全还原。
 - 代码拆分为组件和数据层。改动后运行 `npm run build` 及相关浏览器测试；视觉改动更新截图并实际查看。
 - 使用 `npm ci` 安装锁定依赖；云端可指定 `/workspace/.cache/npm` 缓存，本机不要求该路径。Mac 可用 `bash start-local.command` 自动准备依赖并启动。浏览器测试在云端使用系统 Chromium，本地可先运行 `npx playwright install chromium`。每次完成一项独立修改后保存 Git 提交，不自动推送远端。

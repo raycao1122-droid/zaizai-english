@@ -21,6 +21,10 @@ REGIONS = {
     'garden-right': ('02_classroom_layout_reference.png', (1118, 323, 49, 481)),
     'garden-canopy': ('02_classroom_layout_reference.png', (875, 164, 290, 48)),
     'garden-grass': ('02_classroom_layout_reference.png', (465, 790, 702, 18)),
+    'fish': ('03_lesson_storyboard_reference.png', (1239, 506, 69, 47)),
+    'pet-dog': ('03_lesson_storyboard_reference.png', (873, 560, 102, 65)),
+    'pet-cat': ('03_lesson_storyboard_reference.png', (984, 560, 103, 65)),
+    'pet-none': ('03_lesson_storyboard_reference.png', (1098, 560, 88, 65)),
 }
 
 

@@ -1,6 +1,7 @@
 import { assetUrl } from "../lib/assets";
+import { lessonSteps } from "./lessonFlow";
 
-export type AnimalId = "dog" | "cat" | "bird" | "rabbit";
+export type AnimalId = "dog" | "cat" | "bird" | "rabbit" | "fish";
 export type PanelTab = "conversation" | "tips" | "notes";
 export type VoiceState =
   | "speaking"
@@ -48,27 +49,27 @@ export const animals: {
     hint: "Look for the animal with long ears. 找一找长耳朵的小动物。",
     image: assetUrl("rabbit.svg"),
   },
+  {
+    id: "fish",
+    chinese: "小鱼",
+    hint: "Look for the animal that swims. 找一找在水里游的小动物。",
+    image: assetUrl("fish.svg"),
+  },
 ];
 
 export const mockLesson = {
   title: "Lesson 01 · Animals",
   unit: "Unit 1",
   name: "Amazing Animals",
-  steps: [
-    { title: "认识动物", target: "dog" },
-    { title: "找一找小猫", target: "cat" },
-    { title: "找一找小鸟", target: "bird" },
-    { title: "找一找兔子", target: "rabbit" },
-    { title: "动物小复习", target: "dog" },
-  ] as { title: string; target: AnimalId }[],
+  steps: lessonSteps,
 };
 
 export const mockConversation: Message[] = [
   {
     id: "welcome",
     speaker: "Emma",
-    text: "Hi, Zaizai! Today we’re learning about animals. Can you find the dog?",
-    translation: "你好，在在！我们今天学习动物。你能找到小狗吗？",
+    text: "Hi, Zaizai! Welcome to our English class! Are you ready to meet some animals?",
+    translation: "你好，在在！欢迎来到英语课堂。准备好认识一些动物了吗？",
   },
 ];
 

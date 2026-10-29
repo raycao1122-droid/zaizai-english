@@ -10,146 +10,102 @@ import {
 import { Header } from "./components/Header";
 import { EmmaAvatar } from "./components/EmmaAvatar";
 import { LessonStage } from "./components/LessonStage";
+import { ClassroomActivities } from "./components/ClassroomActivities";
 import { ConversationPanel } from "./components/ConversationPanel";
 import { VoiceControlBar } from "./components/VoiceControlBar";
+import { ParentLessonReport } from "./components/ParentLessonReport";
+import { LearningArchive } from "./components/LearningArchive";
+import { CurriculumLibrary } from "./components/CurriculumLibrary";
+import { WordBook } from "./components/WordBook";
 import { Modal } from "./components/Modal";
+import { useClassroom } from "./hooks/useClassroom";
+import { lessonSteps } from "./data/lessonFlow";
 import {
-  animals,
-  mockConversation,
-  mockLesson,
-  voiceCycle,
-  type AnimalId,
-  type Message,
-  type PanelTab,
-  type VoiceState,
-} from "./data/mockLesson";
+  mockHistory,
+  mockMaterials,
+  type CurriculumMaterial,
+  type MockSession,
+} from "./data/mockReports";
+import { voiceCycle } from "./data/mockLesson";
 
 export default function App() {
-  const [step, setStep] = useState(0);
-  const [selected, setSelected] = useState<AnimalId | null>(null);
-  const [hint, setHint] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [panelTab, setPanelTab] = useState<PanelTab>("conversation");
-  const [draft, setDraft] = useState("");
-  const [notes, setNotes] = useState("");
-  const [messages, setMessages] = useState<Message[]>(mockConversation);
-  const [baseVoice, setBaseVoice] = useState<VoiceState>("listening");
-  const [muted, setMuted] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [mood, setMood] = useState("speaking");
-  const [speed, setSpeed] = useState("normal");
-  const [translate, setTranslate] = useState(false);
-  const [exited, setExited] = useState(false);
+  const { state, dispatch, context } = useClassroom();
   const [modal, setModal] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const voice: VoiceState = paused ? "paused" : muted ? "muted" : baseVoice;
-  const target = mockLesson.steps[step].target;
-  function notify(text: string) {
-    setToast(text);
+  const [reviewed, setReviewed] = useState<string[]>([]);
+  const [materials, setMaterials] =
+    useState<CurriculumMaterial[]>(mockMaterials);
+  const [reportSession, setReportSession] = useState<MockSession>(
+    mockHistory[0],
+  );
+  const voice = state.paused
+    ? "paused"
+    : state.muted
+      ? "muted"
+      : state.baseVoice;
+  function audio() {
+    if (!state.paused && !state.muted)
+      dispatch({ type: "voice", value: "speaking" });
+    setToast("音频播放状态模拟：尚未接入音频或语音 API。");
   }
-  function addMessage(
-    speaker: Message["speaker"],
-    text: string,
-    translation?: string,
-  ) {
-    setMessages((m) => [
-      ...m,
-      { id: crypto.randomUUID(), speaker, text, translation },
-    ]);
-  }
-  function selectAnimal(id: AnimalId) {
-    if (paused || exited) return;
-    setSelected(id);
-    addMessage("在在", id);
-    const correct = id === target;
-    addMessage(
-      "Emma",
-      correct
-        ? `Great! That’s right. It’s a ${id}!`
-        : `Good try! That’s a ${id}. Can you find the ${target}?`,
-      correct ? "太棒了，答对了！" : "再仔细看看，试一试吧。",
-    );
-    setMood(correct ? "encouraging" : "thinking");
-    setBaseVoice("speaking");
-    notify(
-      correct
-        ? "选对了！这是本地图片练习反馈。"
-        : "再试一次，点击「提示我一下」可以获得帮助。",
-    );
-  }
-  function goStep(index: number) {
-    if (paused || exited) return;
-    setStep(index);
-    setSelected(null);
-    setHint(false);
-    setMood("speaking");
-    setBaseVoice("listening");
-    setMessages([
-      {
-        id: crypto.randomUUID(),
-        speaker: "Emma",
-        text: `Let’s look at the animals. Can you find the ${mockLesson.steps[index].target}?`,
-        translation: `看看这些动物，你能找到${animals.find((a) => a.id === mockLesson.steps[index].target)!.chinese}吗？`,
-      },
-    ]);
+
+  function navigate(index: number) {
+    if (state.paused) {
+      setToast("课堂已暂停，请先继续课堂后切换环节。");
+      return false;
+    }
+    if (state.exited) dispatch({ type: "resume" });
+    dispatch({ type: "navigate", index });
+    setToast("");
+    return true;
   }
   function reset() {
-    setStep(0);
-    setSelected(null);
-    setHint(false);
-    setMessages(mockConversation);
-    setCollapsed(false);
-    setPanelTab("conversation");
-    setDraft("");
-    setNotes("");
-    setTranslate(false);
-    setBaseVoice("listening");
-    setMuted(false);
-    setPaused(false);
-    setMood("speaking");
-    setSpeed("normal");
-    setToast("演示已重置。");
-    setExited(false);
+    dispatch({ type: "reset" });
+    setReportSession(mockHistory[0]);
+    setToast("演示已重置，当前课堂草稿和笔记已清空。");
   }
-  function onVoice(value: VoiceState) {
-    setPaused(value === "paused");
-    setMuted(value === "muted");
-    if (value !== "paused" && value !== "muted") setBaseVoice(value);
+  function review(word: string) {
+    setReviewed((items) =>
+      items.includes(word)
+        ? items.filter((item) => item !== word)
+        : [...items, word],
+    );
   }
-  function audio() {
-    setBaseVoice("speaking");
-    notify("音频播放状态模拟：尚未接入音频或语音 API。");
+  function headerNavigate(name: string) {
+    if (name === "上课") {
+      dispatch({ type: "resume" });
+      if (state.step >= 8) dispatch({ type: "navigate", index: 3 });
+    } else if (name === "学习报告") {
+      setReportSession(mockHistory[0]);
+      navigate(9);
+    } else setModal(name);
+  }
+  function next() {
+    if (state.paused) return;
+    if (state.step === lessonSteps.length - 1) setModal("退出课堂");
+    else navigate(state.step + 1);
   }
   return (
     <div className="app-shell">
       <Header
-        onNavigate={(name) => {
-          if (name === "上课") {
-            if (exited) {
-              setExited(false);
-              setPaused(false);
-            }
-          } else setModal(name);
-        }}
+        active={state.step >= 9 && !state.exited ? "学习报告" : "上课"}
+        onNavigate={headerNavigate}
         onSettings={() => setModal("课堂设置")}
       />
-      {exited ? (
+      {state.exited ? (
         <main className="reentry">
           <div className="reentry-card">
             <BookOpen size={52} />
-            <span className="demo-badge">M1 模拟课堂</span>
+            <span className="demo-badge">M2 模拟课堂</span>
             <h1>课堂已退出</h1>
-            <p>Emma 在这里等你。准备好了，就回来继续认识动物吧。</p>
+            <p>Emma 在这里等你。准备好了，就回来继续吧。</p>
             <p className="muted-copy">
-              本次练习进度、笔记和未发送的回答仍保留。
+              本次课堂环节、笔记和未发送的回答仍保留。
             </p>
             <div className="reentry-actions">
               <button
                 className="primary-button"
-                onClick={() => {
-                  setExited(false);
-                  setPaused(false);
-                }}
+                onClick={() => dispatch({ type: "resume" })}
               >
                 <Play size={19} />
                 重新进入课堂
@@ -163,95 +119,142 @@ export default function App() {
       ) : (
         <>
           <main
-            className={`classroom-layout ${collapsed ? "panel-collapsed" : ""}`}
+            className={`classroom-layout ${state.collapsed ? "panel-collapsed" : ""}`}
           >
             <EmmaAvatar
               voice={voice}
-              mood={mood}
-              onMood={(value) => {
-                setMood(value);
-                if (value === "thinking") setBaseVoice("thinking");
-                if (value === "speaking") setBaseVoice("speaking");
+              mood={state.mood}
+              onMood={(mood) => {
+                dispatch({ type: "patch", patch: { mood } });
+                if (mood === "thinking" || mood === "speaking") {
+                  if (!state.paused && !state.muted)
+                    dispatch({
+                      type: "voice",
+                      value: mood === "thinking" ? "thinking" : "speaking",
+                    });
+                }
               }}
               onAudio={audio}
             />
             <LessonStage
-              step={step}
-              selected={selected}
-              hint={hint}
-              panelCollapsed={collapsed}
-              disabled={paused}
-              onSelect={selectAnimal}
-              onHint={() => setHint((v) => !v)}
-              onAudio={audio}
+              index={state.step}
+              panelCollapsed={state.collapsed}
               onDirectory={() => setModal("课程目录")}
-              onExpand={() => setCollapsed(false)}
-            />
+              onExpand={() =>
+                dispatch({ type: "patch", patch: { collapsed: false } })
+              }
+            >
+              {context.step.id === "parent-report" ? (
+                <ParentLessonReport
+                  key={reportSession.id}
+                  session={reportSession}
+                  onAudio={audio}
+                  onArchive={() => navigate(10)}
+                />
+              ) : context.step.id === "archive" ? (
+                <LearningArchive
+                  reviewed={reviewed}
+                  onReview={review}
+                  onOpenReport={(session) => {
+                    setReportSession(session);
+                    navigate(9);
+                  }}
+                />
+              ) : (
+                <ClassroomActivities
+                  state={state}
+                  onSelect={(animal) => {
+                    dispatch({ type: "select", animal });
+                    if (context.step.id !== "vocabulary")
+                      setToast(
+                        animal === context.target
+                          ? "选对了！这是本地图片练习反馈。"
+                          : "再试一次，可以打开提示观察图片。",
+                      );
+                  }}
+                  onAnswer={(text) => dispatch({ type: "answer", text })}
+                  onAudio={audio}
+                  onHint={() => dispatch({ type: "hint" })}
+                  onRetry={() => dispatch({ type: "retry" })}
+                  onQuestion={() => dispatch({ type: "question" })}
+                  onStart={() => navigate(1)}
+                  onReset={reset}
+                  onReport={() => {
+                    setReportSession(mockHistory[0]);
+                    navigate(9);
+                  }}
+                />
+              )}
+            </LessonStage>
             <ConversationPanel
-              hidden={collapsed}
-              disabled={paused}
-              tab={panelTab}
-              draft={draft}
-              notes={notes}
-              onTabChange={setPanelTab}
-              onDraftChange={setDraft}
-              onNotesChange={setNotes}
-              messages={messages}
-              target={target}
-              translate={translate || hint}
-              onCollapse={() => setCollapsed(true)}
+              hidden={state.collapsed}
+              disabled={state.paused}
+              tab={state.panelTab}
+              draft={state.draft}
+              notes={state.notes}
+              onTabChange={(panelTab) =>
+                dispatch({ type: "patch", patch: { panelTab } })
+              }
+              onDraftChange={(draft) =>
+                dispatch({ type: "patch", patch: { draft } })
+              }
+              onNotesChange={(notes) =>
+                dispatch({ type: "patch", patch: { notes } })
+              }
+              messages={state.messages}
+              target={context.target}
+              translate={state.translate || state.hint}
+              onCollapse={() =>
+                dispatch({ type: "patch", patch: { collapsed: true } })
+              }
               onAudio={audio}
-              onSend={(text) => {
-                if (paused) {
-                  notify("课堂已暂停，请先继续课堂。");
-                  return;
-                }
-                const found = animals.find(
-                  (a) => a.id === text.toLowerCase().trim(),
-                );
-                if (found) selectAnimal(found.id);
-                else {
-                  addMessage("在在", text);
-                  addMessage(
-                    "Emma",
-                    `Let’s practice one animal word: ${target}.`,
-                    "这是本地固定脚本回复，尚未接入 AI。",
-                  );
-                  notify("已显示本地脚本回复，尚未接入 AI。");
-                }
-              }}
+              onSend={(text) => dispatch({ type: "answer", text })}
             />
-            {paused && (
+            {state.paused && (
               <div className="pause-notice" role="status">
                 <Play size={22} />
                 <strong>课堂已暂停</strong>
-                <button onClick={() => setPaused(false)}>继续课堂</button>
+                <button onClick={() => dispatch({ type: "pause" })}>
+                  继续课堂
+                </button>
               </div>
             )}
           </main>
           <VoiceControlBar
             voice={voice}
-            muted={muted}
-            paused={paused}
-            speed={speed}
-            last={step === 4}
+            muted={state.muted}
+            paused={state.paused}
+            speed={state.speed}
+            nextLabel={
+              state.step === 0
+                ? "开始上课"
+                : state.step === 10
+                  ? "结束课堂"
+                  : "下一步"
+            }
             onExit={() => setModal("退出课堂")}
             onCamera={() => setModal("摄像头")}
-            onMute={() => setMuted((v) => !v)}
-            onPause={() => setPaused((v) => !v)}
-            onCycle={() => {
-              const index = voiceCycle.indexOf(baseVoice);
-              onVoice(voiceCycle[(index + 1) % voiceCycle.length]);
-            }}
-            onVoice={onVoice}
-            onSpeed={(s) => {
-              setSpeed(s);
-              notify(
-                `语速已设为${s === "slow" ? "慢速" : s === "fast" ? "快速" : "正常"}（模拟）。`,
+            onMute={() => dispatch({ type: "mute" })}
+            onPause={() => dispatch({ type: "pause" })}
+            onCycle={() =>
+              dispatch({
+                type: "voice",
+                value:
+                  voiceCycle[
+                    (voiceCycle.indexOf(state.baseVoice) + 1) %
+                      voiceCycle.length
+                  ],
+              })
+            }
+            onVoice={(value) => dispatch({ type: "voice", value })}
+            onSpeed={(speed) => {
+              dispatch({ type: "patch", patch: { speed } });
+              setToast(
+                `语速已设为${speed === "slow" ? "慢速" : speed === "fast" ? "快速" : "正常"}（模拟）。`,
               );
             }}
             onReset={reset}
-            onNext={() => (step === 4 ? reset() : goStep(step + 1))}
+            onNext={next}
           />
         </>
       )}
@@ -264,14 +267,18 @@ export default function App() {
         </div>
       )}
       {modal && (
-        <Modal title={modal} onClose={() => setModal(null)}>
+        <Modal
+          title={modal}
+          wide={["课程", "单词本", "错题本"].includes(modal)}
+          onClose={() => setModal(null)}
+        >
           {modal === "退出课堂" ? (
             <>
               <div className="modal-illustration">
                 <LogOut size={34} />
               </div>
               <p>
-                要暂时离开课堂吗？练习进度、笔记和未发送的回答会保留在本次页面中。
+                要暂时离开课堂吗？当前环节、笔记和未发送的回答会保留在本次页面中。
               </p>
               <div className="modal-actions">
                 <button className="soft-button" onClick={() => setModal(null)}>
@@ -280,7 +287,7 @@ export default function App() {
                 <button
                   className="primary-button"
                   onClick={() => {
-                    setExited(true);
+                    dispatch({ type: "exit" });
                     setModal(null);
                     setToast("");
                   }}
@@ -298,8 +305,13 @@ export default function App() {
                 <span>显示中文翻译</span>
                 <input
                   type="checkbox"
-                  checked={translate}
-                  onChange={(e) => setTranslate(e.target.checked)}
+                  checked={state.translate}
+                  onChange={(event) =>
+                    dispatch({
+                      type: "patch",
+                      patch: { translate: event.target.checked },
+                    })
+                  }
                 />
               </label>
               <div className="setting-row">
@@ -310,26 +322,29 @@ export default function App() {
                 <span>Emma 展示</span>
                 <span>原图静态裁切 + CSS 微动</span>
               </div>
-              <p className="notice-copy">AI、语音、摄像头及后台尚未接入。</p>
+              <p className="notice-copy">
+                M2
+                的纠音、报告和档案为模拟内容；AI、语音、摄像头及后台尚未接入。
+              </p>
             </>
           ) : modal === "课程目录" ? (
             <>
               <p className="muted-copy">
-                Lesson 01 · Animals — 本阶段只提供动物识词练习。
+                Lesson 01 · Animals — 11 个模拟课堂环节。
               </p>
               <div className="directory-list">
-                {mockLesson.steps.map((s, i) => (
+                {lessonSteps.map((step, index) => (
                   <button
-                    key={i}
-                    disabled={paused}
+                    key={step.id}
+                    disabled={state.paused}
+                    aria-current={state.step === index ? "step" : undefined}
                     onClick={() => {
-                      goStep(i);
-                      setModal(null);
+                      if (navigate(index)) setModal(null);
                     }}
                   >
-                    <span className="step-number">{i + 1}</span>
-                    <span>{s.title}</span>
-                    {step === i ? (
+                    <span className="step-number">{index + 1}</span>
+                    <span>{step.title}</span>
+                    {state.step === index ? (
                       <Check size={21} />
                     ) : (
                       <ArrowRight size={19} />
@@ -337,16 +352,44 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              {paused && (
+              {state.paused && (
                 <p className="notice-copy">
                   课堂已暂停，请先继续课堂后再切换练习。
                 </p>
               )}
               <p className="notice-copy">
-                发音纠正、报告及长期档案待 M1 验收后开发。
+                全部为前端模拟。完整 11 环节不等于真实 AI 授课。
               </p>
             </>
-          ) : modal === "摄像头" ? (
+          ) : modal === "课程" ? (
+            <CurriculumLibrary
+              materials={materials}
+              onAdd={(items) =>
+                setMaterials((current) => [...current, ...items])
+              }
+              onRemove={(id) =>
+                setMaterials((current) =>
+                  current.filter((item) => item.id !== id),
+                )
+              }
+              onStart={() => {
+                reset();
+                setModal(null);
+              }}
+              onClose={() => setModal(null)}
+            />
+          ) : modal === "单词本" || modal === "错题本" ? (
+            <WordBook
+              mistakes={modal === "错题本"}
+              evidence={state.choices}
+              reviewed={reviewed}
+              onReview={review}
+              onAudio={audio}
+              onPractice={() => {
+                if (navigate(7)) setModal(null);
+              }}
+            />
+          ) : (
             <>
               <div className="modal-illustration">
                 <Settings2 size={34} />
@@ -355,19 +398,6 @@ export default function App() {
               <p className="muted-copy">
                 本阶段不会请求摄像头或麦克风权限，底部只展示模拟状态。
               </p>
-            </>
-          ) : (
-            <>
-              <div className="modal-illustration">
-                <BookOpen size={34} />
-              </div>
-              <p>「{modal}」待开发。</p>
-              <p className="muted-copy">
-                当前仅实现 M1 英语课堂与动物识词，验收前不进入下一阶段。
-              </p>
-              <button className="primary-button" onClick={() => setModal(null)}>
-                返回课堂 <ArrowRight size={18} />
-              </button>
             </>
           )}
         </Modal>

@@ -15,7 +15,7 @@ export function VoiceControlBar({
   muted,
   paused,
   speed,
-  last,
+  nextLabel = "下一步",
   onExit,
   onCamera,
   onMute,
@@ -30,7 +30,7 @@ export function VoiceControlBar({
   muted: boolean;
   paused: boolean;
   speed: string;
-  last: boolean;
+  nextLabel?: string;
   onExit: () => void;
   onCamera: () => void;
   onMute: () => void;
@@ -137,7 +137,7 @@ export function VoiceControlBar({
         <span>重新开始</span>
       </button>
       <button className="next-button" onClick={onNext} disabled={paused}>
-        <span>{last ? "再练一次" : "下一步"}</span>
+        <span>{nextLabel}</span>
         <ArrowRight size={25} />
       </button>
     </footer>

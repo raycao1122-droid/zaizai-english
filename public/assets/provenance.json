@@ -130,5 +130,53 @@
     ],
     "source_sha256": "f9c45a1be8987f9d0b6ffde098fbe09f90ea704499fd0f75d9b6ddb8a3ee4318",
     "method": "SVG viewport with explicit clip; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "fish.svg",
+    "source": "03_lesson_storyboard_reference.png",
+    "viewBox": [
+      1239,
+      506,
+      69,
+      47
+    ],
+    "source_sha256": "315c49e4481f4aa7ea5a38f86f7c2cdfea30312bf34bf022200d00ab364fee1d",
+    "method": "SVG viewport with explicit clip; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "pet-dog.svg",
+    "source": "03_lesson_storyboard_reference.png",
+    "viewBox": [
+      873,
+      560,
+      102,
+      65
+    ],
+    "source_sha256": "315c49e4481f4aa7ea5a38f86f7c2cdfea30312bf34bf022200d00ab364fee1d",
+    "method": "SVG viewport with explicit clip; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "pet-cat.svg",
+    "source": "03_lesson_storyboard_reference.png",
+    "viewBox": [
+      984,
+      560,
+      103,
+      65
+    ],
+    "source_sha256": "315c49e4481f4aa7ea5a38f86f7c2cdfea30312bf34bf022200d00ab364fee1d",
+    "method": "SVG viewport with explicit clip; unmodified original PNG embedded verbatim"
+  },
+  {
+    "file": "pet-none.svg",
+    "source": "03_lesson_storyboard_reference.png",
+    "viewBox": [
+      1098,
+      560,
+      88,
+      65
+    ],
+    "source_sha256": "315c49e4481f4aa7ea5a38f86f7c2cdfea30312bf34bf022200d00ab364fee1d",
+    "method": "SVG viewport with explicit clip; unmodified original PNG embedded verbatim"
   }
 ]

@@ -6,15 +6,18 @@ export function InteractiveMaterial({
   target,
   disabled,
   onSelect,
+  choices = ["dog", "cat", "bird", "rabbit"],
 }: {
   selected: AnimalId | null;
   target: AnimalId;
   disabled: boolean;
   onSelect: (id: AnimalId) => void;
+  choices?: AnimalId[];
 }) {
   return (
     <div className="animal-grid" aria-label="动物图片识词">
-      {animals.map((animal) => {
+      {choices.map((id) => {
+        const animal = animals.find((animal) => animal.id === id)!;
         const chosen = selected === animal.id;
         const correct = chosen && selected === target;
         return (

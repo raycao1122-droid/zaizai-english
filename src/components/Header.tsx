@@ -14,9 +14,11 @@ import { assetUrl } from "../lib/assets";
 export function Header({
   onNavigate,
   onSettings,
+  active = "上课",
 }: {
   onNavigate: (name: string) => void;
   onSettings: () => void;
+  active?: string;
 }) {
   const nav = [
     { text: "上课", Icon: Home },
@@ -38,9 +40,9 @@ export function Header({
         {nav.map(({ text, Icon }) => (
           <button
             key={text}
-            className={`nav-item ${text === "上课" ? "active" : ""}`}
+            className={`nav-item ${text === active ? "active" : ""}`}
             onClick={() => onNavigate(text)}
-            aria-current={text === "上课" ? "page" : undefined}
+            aria-current={text === active ? "page" : undefined}
           >
             <Icon size={22} />
             <span>{text}</span>
