@@ -53,6 +53,7 @@ type Action =
   | { type: "navigate"; index: number }
   | { type: "select"; animal: AnimalId }
   | { type: "answer"; text: string }
+  | { type: "ai-reply"; text: string; reply: string; step: number }
   | { type: "question" }
   | { type: "retry" }
   | { type: "hint" }
@@ -300,6 +301,25 @@ function reducer(state: ClassroomState, action: Action): ClassroomState {
           text: "Let’s try this example together: cat.",
           translation: "切换一次模拟跟读示例；未录音、识别或评分。",
         }),
+      };
+    }
+    case "ai-reply": {
+      if (state.paused || state.exited || state.step !== action.step)
+        return state;
+      return {
+        ...state,
+        draft: "",
+        panelTab: "conversation",
+        baseVoice: "idle",
+        messages: conversation(
+          state,
+          { speaker: "在在", text: action.text },
+          {
+            speaker: "Emma",
+            text: action.reply,
+            translation: "AI 文字回复；未采集音频或进行发音评分。",
+          },
+        ),
       };
     }
     case "answer": {

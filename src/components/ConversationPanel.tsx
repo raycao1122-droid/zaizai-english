@@ -23,6 +23,8 @@ export function ConversationPanel({
   translate,
   hidden,
   disabled,
+  isAi = false,
+  waiting = false,
   tab,
   draft,
   notes,
@@ -38,6 +40,8 @@ export function ConversationPanel({
   translate: boolean;
   hidden: boolean;
   disabled: boolean;
+  isAi?: boolean;
+  waiting?: boolean;
   tab: PanelTab;
   draft: string;
   notes: string;
@@ -46,7 +50,7 @@ export function ConversationPanel({
   onNotesChange: (notes: string) => void;
   onCollapse: () => void;
   onAudio: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => void | boolean | Promise<boolean>;
 }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -104,7 +108,11 @@ export function ConversationPanel({
       >
         {tab === "conversation" && (
           <>
-            <div className="conversation-note">本地脚本对话 · 未接入 AI</div>
+            <div className="conversation-note">
+              {isAi
+                ? "AI 文字对话 · 课件和语音仍为演示"
+                : "本地脚本对话 · 未接入 AI"}
+            </div>
             <div className="message-list">
               {messages.map((message) => (
                 <div
@@ -198,12 +206,14 @@ export function ConversationPanel({
       </div>
       <form
         className="chat-input"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           if (!disabled && draft.trim()) {
-            onSend(draft.trim());
-            onDraftChange("");
-            onTabChange("conversation");
+            const sent = await onSend(draft.trim());
+            if (sent !== false) {
+              onDraftChange("");
+              onTabChange("conversation");
+            }
           }
         }}
       >
@@ -211,9 +221,13 @@ export function ConversationPanel({
           <MessageCircle size={22} />
         </span>
         <input
-          aria-label="输入英文模拟回答"
+          aria-label={isAi ? "输入英文 AI 回答" : "输入英文模拟回答"}
           placeholder={
-            disabled ? "已暂停，继续课堂后发送" : "输入英文，练习回答…"
+            waiting
+              ? "Emma 正在思考…"
+              : disabled
+                ? "已暂停，继续课堂后发送"
+                : "输入英文，练习回答…"
           }
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
@@ -222,7 +236,7 @@ export function ConversationPanel({
         />
         <button
           type="submit"
-          aria-label="发送模拟回答"
+          aria-label={isAi ? "发送 AI 回答" : "发送模拟回答"}
           disabled={disabled || !draft.trim()}
         >
           <Send size={22} fill="currentColor" />

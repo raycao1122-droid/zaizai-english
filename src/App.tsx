@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -33,6 +33,15 @@ import { voiceCycle } from "./data/mockLesson";
 
 export default function App() {
   const { state, dispatch, context } = useClassroom();
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiStatus, setAiStatus] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const aiRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    aiRequest.current?.abort();
+    setAiBusy(false);
+  }, [state.step, state.paused, state.exited]);
+  useEffect(() => () => aiRequest.current?.abort(), []);
   const [libraryRecent, setLibraryRecent] = useState<string[]>([]);
   const [librarySelection, setLibrarySelection] = useState<string | null>(null);
   const [modal, setModal] = useState<string | null>(null);
@@ -50,6 +59,75 @@ export default function App() {
     : state.muted
       ? "muted"
       : state.baseVoice;
+  async function sendAnswer(text: string) {
+    if (!aiEnabled) {
+      dispatch({ type: "answer", text });
+      return true;
+    }
+    if (state.paused || state.exited || aiBusy) return false;
+    const controller = new AbortController();
+    aiRequest.current = controller;
+    setAiBusy(true);
+    const timeout = setTimeout(() => controller.abort(), 35000);
+    try {
+      const response = await fetch("/api/classroom/reply", {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          prompt: context.prompt,
+          history: state.messages.slice(-8).map((m) => ({
+            role: m.speaker === "Emma" ? "assistant" : "user",
+            content: m.text.slice(0, 500),
+          })),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.text !== "string")
+        throw new Error(result.error || "AI 服务暂不可用。");
+      if (controller.signal.aborted) return false;
+      dispatch({
+        type: "ai-reply",
+        text,
+        reply: result.text,
+        step: state.step,
+      });
+      return true;
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setToast(
+          error instanceof Error ? error.message : "AI 连接失败，请重试。",
+        );
+      return false;
+    } finally {
+      clearTimeout(timeout);
+      if (aiRequest.current === controller) setAiBusy(false);
+    }
+  }
+  async function enableAi(enabled: boolean) {
+    aiRequest.current?.abort();
+    if (!enabled) {
+      setAiEnabled(false);
+      setAiBusy(false);
+      setAiStatus("已恢复 M2 演示模式。");
+      return;
+    }
+    try {
+      const response = await fetch("/api/health", {
+        signal: AbortSignal.timeout(5000),
+      });
+      const health = await response.json();
+      if (!response.ok || !health.configured)
+        throw new Error("AI 服务尚未配置。请先启动并配置课堂后端。");
+      setAiEnabled(true);
+      setAiStatus("已开启 AI 文字对话；语音仍为演示。");
+      setToast("已启用真实 AI 文字对话；课件按钮、语音和报告仍为模拟。");
+    } catch {
+      setAiStatus("AI 服务未就绪，请先配置并启动课堂后端。");
+      setToast("AI 服务未就绪，当前仍为 M2 演示。需先配置并启动课堂后端。");
+    }
+  }
   function audio() {
     if (!state.paused && !state.muted)
       dispatch({ type: "voice", value: "speaking" });
@@ -71,6 +149,8 @@ export default function App() {
     return true;
   }
   function reset() {
+    aiRequest.current?.abort();
+    setAiBusy(false);
     dispatch({ type: "reset" });
     setReportSession(mockHistory[0]);
     setReportFromArchive(false);
@@ -203,7 +283,9 @@ export default function App() {
             </LessonStage>
             <ConversationPanel
               hidden={state.collapsed}
-              disabled={state.paused}
+              disabled={state.paused || aiBusy}
+              isAi={aiEnabled}
+              waiting={aiBusy}
               tab={state.panelTab}
               draft={state.draft}
               notes={state.notes}
@@ -223,7 +305,7 @@ export default function App() {
                 dispatch({ type: "patch", patch: { collapsed: true } })
               }
               onAudio={audio}
-              onSend={(text) => dispatch({ type: "answer", text })}
+              onSend={sendAnswer}
             />
             {state.paused && (
               <div className="pause-notice" role="status">
@@ -349,6 +431,23 @@ export default function App() {
                 以下仅改变本次前端演示，不访问任何设备。
               </p>
               <label className="setting-row">
+                <span>真实 AI 文字对话（M3）</span>
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(event) => void enableAi(event.target.checked)}
+                />
+              </label>
+              {aiStatus && (
+                <p className="notice-copy" role="status">
+                  {aiStatus}
+                </p>
+              )}
+              <p className="muted-copy">
+                开启后，仅输入框对话使用
+                AI；需启动课堂后端。课件按钮、语音、评分与报告仍为演示。
+              </p>
+              <label className="setting-row">
                 <span>显示中文翻译</span>
                 <input
                   type="checkbox"
@@ -371,7 +470,7 @@ export default function App() {
               </div>
               <p className="notice-copy">
                 M2
-                的纠音、报告和档案为模拟内容；AI、语音、摄像头及后台尚未接入。
+                的纠音、报告和档案为模拟内容；真实文字对话按上方开关配置；语音、摄像头与学习数据服务尚未接入。
               </p>
             </>
           ) : modal === "课程目录" ? (
