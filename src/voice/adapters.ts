@@ -36,6 +36,8 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
     { chunks: Uint8Array[]; bytes: number }
   >();
   private meterAt = 0;
+  private pendingInput: { blob: Blob; duration: number } | null = null;
+  private outputItemId: string | undefined;
   async connect(options: ConnectOptions) {
     this.onEvent = options.onEvent;
     if (
@@ -177,6 +179,31 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
               this.onEvent?.({ type: "audio-paused" });
             resolve();
           }
+          // Older deployed relays supply item IDs on captions but not on audio/VAD events.
+          if ((e.type === "subtitle" || e.type === "subtitle-delta") && e.id) {
+            if (e.speaker === "Emma") {
+              this.outputItemId = e.id;
+              const waiting = this.outputSegments.get("current");
+              if (waiting) {
+                this.outputSegments.delete("current");
+                this.outputSegments.set(e.id, waiting);
+              }
+            } else if (e.speaker === "在在") {
+              if (this.inputSegment?.id === "current")
+                this.inputSegment.id = e.id;
+              if (this.pendingInput) {
+                const clip = this.pendingInput;
+                this.pendingInput = null;
+                this.onEvent?.({
+                  type: "clip",
+                  speaker: "在在",
+                  id: e.id,
+                  clip: clip.blob,
+                  duration: clip.duration,
+                });
+              }
+            }
+          }
           if (e.type === "interrupted") {
             this.finishInput();
             this.finishOutput();
@@ -194,7 +221,10 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
             this.finishOutput(e.id);
           if (e.type === "subtitle" && e.speaker === "在在" && e.final)
             this.finishInput(e.id);
-          if (e.type === "response-started") this.acceptingAudio = true;
+          if (e.type === "response-started") {
+            this.acceptingAudio = true;
+            this.outputItemId = undefined;
+          }
           if (
             e.type === "audio" &&
             e.audio &&
@@ -203,7 +233,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
           ) {
             try {
               const bytes = decodePcm(e.audio),
-                id = e.id || "current";
+                id = e.id || this.outputItemId || "current";
               const segment = this.outputSegments.get(id) || {
                 chunks: [],
                 bytes: 0,
@@ -245,6 +275,10 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
     this.inputSegment = null;
     if (segment.bytes) {
       const clip = pcmClip(segment.chunks, 16000);
+      if (segment.id === "current") {
+        this.pendingInput = clip;
+        return;
+      }
       this.onEvent?.({
         type: "clip",
         speaker: "在在",
@@ -372,6 +406,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
     });
     this.stopPlayback();
     this.inputRing = [];
+    this.pendingInput = null;
     this.outputSegments.clear();
     if (this.audio && this.audio.state !== "closed") void this.audio.close();
     if (this.ws) {

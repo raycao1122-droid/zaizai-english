@@ -252,3 +252,65 @@ test("a suspended mobile AudioContext shows a recovery button and resumes microp
   );
   await page.getByRole("button", { name: "断开语音", exact: true }).click();
 });
+
+test("existing deployed relay without audio item IDs still attaches real audio to the right caption", async ({
+  page,
+}) => {
+  await page.route("**/api/voice/config", (r) =>
+    r.fulfill({ json: { providers: [{ id: "qwen", configured: true }] } }),
+  );
+  await page.route("**/api/voice/session", (r) =>
+    r.fulfill({ json: { token: "test-only-browser-authorization" } }),
+  );
+  await page.route("**/api/voice/ticket", (r) =>
+    r.fulfill({ json: { ticket: "test-only-ticket" } }),
+  );
+  let relay: import("@playwright/test").WebSocketRoute | undefined,
+    frames = 0;
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
+    relay = ws;
+    ws.onMessage((raw) => {
+      if (JSON.parse(String(raw)).type === "audio") frames++;
+    });
+    ws.send(JSON.stringify({ type: "ready" }));
+  });
+  await openReady(page);
+  await page.getByRole("button", { name: "开始语音", exact: true }).click();
+  await expect.poll(() => frames).toBeGreaterThan(3);
+  relay!.send(JSON.stringify({ type: "interrupted" }));
+  await page.waitForTimeout(200);
+  relay!.send(JSON.stringify({ type: "thinking" }));
+  relay!.send(
+    JSON.stringify({
+      type: "subtitle",
+      speaker: "在在",
+      id: "legacy-student",
+      text: "I like dogs.",
+      final: true,
+    }),
+  );
+  relay!.send(JSON.stringify({ type: "response-started" }));
+  relay!.send(
+    JSON.stringify({
+      type: "audio",
+      audio: Buffer.alloc(24000).toString("base64"),
+    }),
+  );
+  relay!.send(
+    JSON.stringify({
+      type: "subtitle",
+      speaker: "Emma",
+      id: "legacy-teacher",
+      text: "What dog do you like?",
+      final: true,
+    }),
+  );
+  relay!.send(JSON.stringify({ type: "turn-ended" }));
+  await expect(page.getByLabel("在在语音回听")).toBeVisible();
+  await expect(page.getByLabel("Emma语音回听")).toBeVisible();
+  const teacher = page
+    .locator(".message-bubble")
+    .filter({ hasText: "What dog do you like?" });
+  await expect(teacher.getByLabel("Emma语音回听")).toHaveCount(1);
+  await page.getByRole("button", { name: "断开语音", exact: true }).click();
+});
