@@ -163,7 +163,11 @@ export function useRealtimeVoice({
       .then((result) => {
         if (!active) return;
         acceptAccess(result);
-        setMessage("语音已就绪 · 点击开始语音");
+        setMessage((previous) =>
+          previous.startsWith("未连接")
+            ? "语音已就绪 · 点击开始语音"
+            : previous,
+        );
       })
       .catch(() => {
         /* Ordinary classroom use never displays an admin setup form. */
@@ -246,7 +250,11 @@ export function useRealtimeVoice({
       await service.connect({
         base,
         token: token.current,
-        authorize: async () => {
+        authorize: async (refresh) => {
+          if (refresh) {
+            token.current = "";
+            expiresAt.current = 0;
+          }
           await ensureAccess();
           return token.current;
         },

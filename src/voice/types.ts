@@ -50,7 +50,7 @@ export type VoiceEvent = {
 export type ConnectOptions = {
   base: string;
   token: string;
-  authorize?: () => Promise<string>;
+  authorize?: (refresh?: boolean) => Promise<string>;
   context: VoiceContext;
   onEvent: (event: VoiceEvent) => void;
 };
@@ -81,6 +81,14 @@ export function validateBackend(value: string) {
 export function backendUrl(base: string, path: string) {
   return `${base}${path}`;
 }
+export class ClassroomApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 export async function api(
   base: string,
   path: string,
@@ -104,6 +112,9 @@ export async function api(
     throw new Error("语音服务暂时无法连接，请稍后重试。");
   }
   if (!response.ok)
-    throw new Error(result.error || "语音服务暂不可用，请稍后重试。");
+    throw new ClassroomApiError(
+      result.error || "语音服务暂不可用，请稍后重试。",
+      response.status,
+    );
   return result;
 }

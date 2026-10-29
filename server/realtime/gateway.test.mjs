@@ -65,6 +65,7 @@ async function fixture(env, fn, factory = () => new FixtureAdapter()) {
   try {
     await fn({ base, post });
   } finally {
+    g.dispose();
     s.closeAllConnections();
     await new Promise((r) => s.close(r));
   }
@@ -183,7 +184,7 @@ test("single-use websocket ticket, real local relay, mute, context isolation and
       assert.equal(JSON.parse((await subtitle)[0]).text, "I like dogs.");
       assert.equal(
         (await post("/api/voice/ticket", { provider: "qwen" }, token)).status,
-        429,
+        200,
       );
       ws.send(JSON.stringify({ type: "mute", muted: true }));
       await new Promise((r) => setTimeout(r, 10));
@@ -374,3 +375,79 @@ test("backend-only invitations authorize devices without classroom configuration
     assert(!JSON.stringify(catalog).includes("DASHSCOPE"));
     assert(!JSON.stringify(catalog).includes("cn-beijing"));
   }));
+
+test("same signed device can replace its old tab after token renewal, while another device cannot evict it", async () => {
+  const adapters = [];
+  await fixture(
+    configured,
+    async ({ base, post }) => {
+      async function device() {
+        const issued = await (
+          await post("/api/admin/classroom-invites", {}, code, "")
+        ).json();
+        const grant = new URLSearchParams(
+          new URL(issued.url).hash.slice(1),
+        ).get("classroom-access");
+        const r = await post("/api/voice/authorize", { grant });
+        return {
+          token: (await r.json()).token,
+          cookie: r.headers.get("set-cookie").split(";")[0],
+        };
+      }
+      async function ticket(token) {
+        return (
+          await (
+            await post("/api/voice/ticket", { provider: "qwen" }, token)
+          ).json()
+        ).ticket;
+      }
+      async function open(ticket) {
+        const ws = new WebSocket(
+          base.replace("http", "ws") + "/api/voice/socket?ticket=" + ticket,
+          { origin },
+        );
+        const ready = once(ws, "message");
+        await once(ws, "open");
+        assert.equal(JSON.parse((await ready)[0]).type, "ready");
+        return ws;
+      }
+      const d = await device();
+      const first = await open(await ticket(d.token));
+      const renewed = await fetch(base + "/api/voice/session", {
+        headers: { Origin: origin, Cookie: d.cookie },
+      });
+      const secondToken = (await renewed.json()).token;
+      const replacement = await ticket(secondToken);
+      assert.equal(
+        adapters[0].closed,
+        undefined,
+        "requesting a ticket alone does not interrupt the old tab",
+      );
+      const closed = once(first, "close");
+      const second = await open(replacement);
+      await closed;
+      assert(adapters[0].closed);
+      assert.equal(adapters[1].closed, undefined);
+      const other = await device();
+      const denied = await post(
+        "/api/voice/ticket",
+        { provider: "qwen" },
+        other.token,
+      );
+      assert.equal(denied.status, 409);
+      assert.match((await denied.json()).error, /另一台设备/);
+      assert.equal(
+        adapters[1].closed,
+        undefined,
+        "another device cannot interrupt the active classroom",
+      );
+      second.close();
+      await once(second, "close");
+    },
+    () => {
+      const a = new FixtureAdapter();
+      adapters.push(a);
+      return a;
+    },
+  );
+});

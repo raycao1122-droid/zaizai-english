@@ -269,3 +269,72 @@ for (const [width, height] of [
     );
   });
 }
+
+test("slow session startup drops pre-connection microphone frames instead of flooding the relay", async ({
+  page,
+}) => {
+  await service(page);
+  let frames = 0,
+    ready = false,
+    beforeReady = 0;
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
+    ws.onMessage((raw) => {
+      if (JSON.parse(String(raw)).type === "audio") {
+        frames++;
+        if (!ready) beforeReady++;
+      }
+    });
+    setTimeout(() => {
+      ready = true;
+      ws.send(JSON.stringify({ type: "ready" }));
+    }, 600);
+  });
+  await openReady(page);
+  await page.getByRole("button", { name: "开始语音", exact: true }).click();
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "已连接",
+  );
+  await page.waitForTimeout(100);
+  expect(beforeReady).toBe(0);
+  expect(frames).toBeLessThan(8);
+  await page.getByRole("button", { name: "断开语音", exact: true }).click();
+});
+test("server restart refreshes expired access once without asking the learner for configuration", async ({
+  page,
+}) => {
+  await service(page);
+  let sessions = 0,
+    tickets = 0;
+  await page.route("**/api/voice/session", (r) => {
+    sessions++;
+    return r.fulfill({
+      json: {
+        token:
+          sessions === 1
+            ? "old-browser-access-token"
+            : "new-browser-access-token",
+      },
+    });
+  });
+  await page.route("**/api/voice/ticket", (r) => {
+    tickets++;
+    return tickets === 1
+      ? r.fulfill({ status: 401, json: { error: "当前设备尚未授权。" } })
+      : r.fulfill({ json: { ticket: "renewed-single-use-ticket" } });
+  });
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) =>
+    ws.send(JSON.stringify({ type: "ready" })),
+  );
+  await openReady(page);
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "语音已就绪",
+  );
+  await page.getByRole("button", { name: "开始语音", exact: true }).click();
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "已连接",
+  );
+  expect(sessions).toBe(2);
+  expect(tickets).toBe(2);
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
+  await page.getByRole("button", { name: "断开语音", exact: true }).click();
+});

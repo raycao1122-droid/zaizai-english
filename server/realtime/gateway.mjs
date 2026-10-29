@@ -42,7 +42,7 @@ export function createVoiceGateway(
   const tokens = new Map(),
     tickets = new Map(),
     rates = new Map(),
-    active = new Set();
+    active = new Map();
   const wss = new WebSocketServer({ noServer: true, maxPayload: 32768 });
   const publicMode =
     env.CLASSROOM_HOST === "0.0.0.0" || env.NODE_ENV === "production";
@@ -60,16 +60,26 @@ export function createVoiceGateway(
       for (const [key, value] of map) if (value.expires < now) map.delete(key);
   }, 30000);
   cleanup.unref();
-  server.on("close", () => {
+  function dispose() {
     clearInterval(cleanup);
+    for (const [adapter, session] of [...active]) {
+      if (session.end) session.end();
+      else adapter.close();
+    }
     for (const ws of wss.clients) ws.terminate();
-  });
+  }
+  server.on("close", dispose);
   const json = (res, status, data) =>
     res
       .writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        "X-Classroom-Revision": /^[a-f0-9]{40}$/.test(
+          env.RENDER_GIT_COMMIT || "",
+        )
+          ? env.RENDER_GIT_COMMIT
+          : "local",
       })
       .end(JSON.stringify(data));
   const allowed = (req) =>
@@ -78,6 +88,9 @@ export function createVoiceGateway(
     const token = req.headers.authorization?.replace(/^Bearer /, "");
     return token && tokens.get(token)?.expires > Date.now() ? token : null;
   };
+  const ownerFor = (token) => tokens.get(token)?.deviceId || "token:" + token;
+  const blockedByOther = (owner) =>
+    [...active.values()].some((session) => session.owner !== owner);
   function rate(key, max, window = 60000) {
     const old = rates.get(key);
     const r =
@@ -240,7 +253,10 @@ export function createVoiceGateway(
           return true;
         }
         const token = randomBytes(32).toString("base64url");
-        tokens.set(token, { expires: Date.now() + 30 * 60000 });
+        tokens.set(token, {
+          expires: Date.now() + 30 * 60000,
+          deviceId: device.id,
+        });
         json(res, 200, { token, expiresIn: 1800 });
         return true;
       }
@@ -263,7 +279,10 @@ export function createVoiceGateway(
         }
         res.setHeader("Set-Cookie", device.cookie);
         const token = randomBytes(32).toString("base64url");
-        tokens.set(token, { expires: Date.now() + 30 * 60000 });
+        tokens.set(token, {
+          expires: Date.now() + 30 * 60000,
+          deviceId: device.data.id,
+        });
         json(res, 200, { token, expiresIn: 1800 });
         return true;
       }
@@ -322,7 +341,7 @@ export function createVoiceGateway(
           return true;
         }
         const adapter = adapterFactory();
-        active.add(adapter);
+        active.set(adapter, { owner: null });
         res.on("close", () => {
           if (!res.writableEnded) adapter.close();
         });
@@ -342,12 +361,15 @@ export function createVoiceGateway(
         return true;
       }
       if (req.url === "/api/voice/ticket") {
-        if (
-          !rate("ticket:" + token, 6) ||
-          active.size >= 1 ||
-          tickets.size >= 100
-        ) {
-          json(res, 429, { error: "语音会话繁忙，请稍后重试。" });
+        const owner = ownerFor(token);
+        if (!rate("ticket:" + owner, 6) || tickets.size >= 100) {
+          json(res, 429, { error: "连接操作较频繁，请稍后再试。" });
+          return true;
+        }
+        if (blockedByOther(owner)) {
+          json(res, 409, {
+            error: "另一台设备正在上课，请先在那台设备断开语音。",
+          });
           return true;
         }
         const ticket = randomBytes(32).toString("base64url");
@@ -386,20 +408,27 @@ export function createVoiceGateway(
       grant.expires <= Date.now() ||
       (grant.origin && grant.origin !== req.headers.origin) ||
       !(tokens.get(grant.token)?.expires > Date.now()) ||
-      active.size >= 1
+      blockedByOther(ownerFor(grant.token))
     ) {
       socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
       return;
     }
     tickets.delete(ticket);
     wss.handleUpgrade(req, socket, head, (ws) => {
+      const owner = ownerFor(grant.token);
+      for (const session of [...active.values()]) {
+        if (session.owner === owner)
+          session.end?.("语音已切换到本设备的另一个课堂页面。");
+      }
       const adapter = adapterFactory();
-      active.add(adapter);
+      const lease = { owner, end: null };
+      active.set(adapter, lease);
       let live = false,
         muted = false,
         ended = false,
         frames = 0,
-        bytes = 0;
+        bytes = 0,
+        lastAudioAt = Date.now();
       const send = (event) => {
         if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(event));
       };
@@ -415,6 +444,7 @@ export function createVoiceGateway(
         active.delete(adapter);
         ws.close();
       };
+      lease.end = end;
       const duration = setTimeout(
         () => end("本次语音已到10分钟上限，请手动重新连接。"),
         600000,
@@ -422,6 +452,8 @@ export function createVoiceGateway(
       const budget = setInterval(() => {
         frames = 0;
         bytes = 0;
+        if (live && !muted && Date.now() - lastAudioAt > 15000)
+          end("未收到麦克风音频，已释放连接。请重新连接。");
       }, 1000);
       let alive = true;
       const heartbeat = setInterval(() => {
@@ -455,12 +487,14 @@ export function createVoiceGateway(
             typeof e.audio === "string" &&
             e.audio.length <= 16000 &&
             /^[A-Za-z0-9+/]+={0,2}$/.test(e.audio)
-          )
+          ) {
+            lastAudioAt = Date.now();
             adapter.appendAudio(e.audio);
-          else if (e.type === "context" && live)
+          } else if (e.type === "context" && live)
             adapter.updateContext(safeContext(e.context));
           else if (e.type === "mute" && typeof e.muted === "boolean") {
             muted = e.muted;
+            lastAudioAt = Date.now();
             adapter.mute();
           } else if (e.type === "disconnect") end();
           else if (!["audio", "context"].includes(e.type))
@@ -474,10 +508,11 @@ export function createVoiceGateway(
         .then(() => {
           if (ended) return;
           live = true;
+          lastAudioAt = Date.now();
           send({ type: "ready" });
         })
         .catch((error) => end(error.message));
     });
   });
-  return { handle, identity };
+  return { handle, identity, dispose };
 }

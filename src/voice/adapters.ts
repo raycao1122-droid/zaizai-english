@@ -1,5 +1,6 @@
 import {
   api,
+  ClassroomApiError,
   backendUrl,
   type ConnectOptions,
   type RealtimeVoiceService,
@@ -22,6 +23,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   private timer?: ReturnType<typeof setTimeout>;
   private onEvent?: (event: VoiceEvent) => void;
   private acceptingAudio = true;
+  private sending = false;
   async connect(options: ConnectOptions) {
     this.onEvent = options.onEvent;
     if (
@@ -40,11 +42,6 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       const accessToken = options.authorize
         ? await options.authorize()
         : options.token;
-      if (this.closed) return;
-      const ticket = await api(options.base, "/api/voice/ticket", accessToken, {
-        provider: "qwen",
-        context: options.context,
-      });
       if (this.closed) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -68,12 +65,46 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       );
       if (this.closed) return;
       this.capture = new AudioWorkletNode(this.audio!, "pcm-capture");
+      this.capture.port.onmessage = ({ data }: MessageEvent<ArrayBuffer>) => {
+        if (
+          this.closed ||
+          this.muted ||
+          !this.sending ||
+          this.ws?.readyState !== WebSocket.OPEN
+        )
+          return;
+        if (this.ws!.bufferedAmount > 128000)
+          return this.fail("音频网络拥塞，已停止录音，请重新连接。");
+        let binary = "";
+        for (const b of new Uint8Array(data)) binary += String.fromCharCode(b);
+        this.send({ type: "audio", audio: btoa(binary) });
+      };
       this.source = this.audio!.createMediaStreamSource(stream);
       this.silent = this.audio!.createGain();
       this.silent.gain.value = 0;
       this.source.connect(this.capture);
       this.capture.connect(this.silent);
       this.silent.connect(this.audio!.destination);
+      let ticket;
+      try {
+        ticket = await api(options.base, "/api/voice/ticket", accessToken, {
+          provider: "qwen",
+          context: options.context,
+        });
+      } catch (error) {
+        if (
+          !(error instanceof ClassroomApiError) ||
+          error.status !== 401 ||
+          !options.authorize
+        )
+          throw error;
+        const renewed = await options.authorize(true);
+        ticket = await api(options.base, "/api/voice/ticket", renewed, {
+          provider: "qwen",
+          context: options.context,
+        });
+      }
+      if (this.closed) return;
       const url = new URL(
         backendUrl(options.base, "/api/voice/socket"),
         window.location.origin,
@@ -104,6 +135,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
           if (e.type === "ready") {
             clearTimeout(this.timer);
             this.rejectPending = undefined;
+            this.sending = true;
             resolve();
           }
           if (e.type === "interrupted") {
@@ -120,22 +152,12 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
             this.play(e.audio);
           this.onEvent?.(e);
         };
-        ws.onerror = () =>
-          this.fail("语音网络连接失败，请稍后重试。");
+        ws.onerror = () => this.fail("语音网络连接失败，请稍后重试。");
         ws.onclose = () => {
           if (!this.closed) this.fail("语音连接已断开，请点击重新连接。");
         };
       });
       if (this.closed) return;
-      this.capture.port.onmessage = ({ data }: MessageEvent<ArrayBuffer>) => {
-        if (this.closed || this.muted || ws.readyState !== WebSocket.OPEN)
-          return;
-        if (ws.bufferedAmount > 128000)
-          return this.fail("音频网络拥塞，已停止录音，请重新连接。");
-        let binary = "";
-        for (const b of new Uint8Array(data)) binary += String.fromCharCode(b);
-        this.send({ type: "audio", audio: btoa(binary) });
-      };
     } catch (e) {
       this.disconnect();
       if (
@@ -219,6 +241,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   disconnect() {
     if (this.closed) return;
     this.closed = true;
+    this.sending = false;
     clearTimeout(this.timer);
     const reject = this.rejectPending;
     this.rejectPending = undefined;
