@@ -1,6 +1,6 @@
 # 转到电脑本地继续开发
 
-迁移的是现有 M1 项目和完整 Git 历史，不重写界面，也不继续开发 M2。
+迁移的是现有项目和完整 Git 历史。当前云端已进入获用户批准的 M2；此前下载的 M1 包不会自动更新，需要另行导出当前版本。
 
 ## Mac 启动
 
@@ -25,7 +25,7 @@
 
 可以把这段说明作为本地任务的起始消息：
 
-> 继续当前文件夹里的「在在的英语课堂」。这是从云端迁移的已有 Git 项目，请先读 AGENTS.md、design/CODEX_START_HERE.md、design/FRONTEND_SPEC.md、design/ACCEPTANCE_CHECKLIST.md、M1_DELIVERY.md 和 LOCAL_DEVELOPMENT.md。保留原始 Emma 和动物素材、现有界面及全部 Git 历史，不重建项目。先启动并验证 M1，等待我验收；不要自行进入 M2。每次完成修改后提交 Git。GitHub Pages 的配置已准备，但云端 API 网络受限，尚未创建远端仓库或上线。
+> 继续当前文件夹里的「在在的英语课堂」。这是从云端迁移的已有 Git 项目，请先读 AGENTS.md、design/CODEX_START_HERE.md、design/FRONTEND_SPEC.md、design/ACCEPTANCE_CHECKLIST.md、M1_DELIVERY.md、M2_DELIVERY.md 和 LOCAL_DEVELOPMENT.md。保留原始 Emma 和动物素材、现有界面及全部 Git 历史，不重建项目。当前已授权 M2，先启动并验证完整 11 环节及模拟报告；不要自行进入 M3。每次完成修改后提交 Git。GitHub Pages 的配置已准备，但云端 API 网络受限，尚未创建远端仓库或上线。
 
 ## 手动运行与验证
 

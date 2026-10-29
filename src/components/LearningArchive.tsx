@@ -79,7 +79,15 @@ export function LearningArchive({
                 {[3, 5].map((count) => (
                   <button
                     key={count}
-                    onClick={() => setLimit(count)}
+                    onClick={() => {
+                      setLimit(count);
+                      if (
+                        !mockHistory
+                          .slice(0, count)
+                          .some((item) => item.id === selected)
+                      )
+                        setSelected(mockHistory[0].id);
+                    }}
                     aria-pressed={limit === count}
                     className={limit === count ? "active" : ""}
                   >

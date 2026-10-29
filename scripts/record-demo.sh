@@ -16,6 +16,6 @@ if not executable.exists():
 PY
 
 PLAYWRIGHT_BROWSERS_PATH=/workspace/.cache/ms-playwright node scripts/record-demo.mjs
-ffmpeg -hide_banner -loglevel warning -y -i demo/classroom-demo.webm \
+ffmpeg -hide_banner -loglevel warning -y -i demo/m2-classroom-demo.webm \
   -an -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p \
-  -movflags +faststart demo/classroom-demo.mp4
+  -movflags +faststart demo/m2-classroom-demo.mp4

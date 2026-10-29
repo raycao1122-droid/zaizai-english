@@ -1,4 +1,4 @@
-// Record the existing M1 production interface without changing application code.
+// Record the actual M2 production interface; do not change application code.
 import { mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { chromium } from "@playwright/test";
@@ -19,70 +19,82 @@ const context = await browser.newContext({
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
-const pause = (ms = 1800) => page.waitForTimeout(ms);
-async function click(locator, delay = 1800) {
+const pause = (ms = 1100) => page.waitForTimeout(ms);
+async function click(locator, delay = 1100) {
   await locator.hover();
-  await pause(300);
+  await pause(200);
   await locator.click();
   await pause(delay);
 }
-
+const next = () =>
+  click(
+    page
+      .locator(".voice-bar")
+      .getByRole("button", { name: "下一步", exact: true }),
+    1400,
+  );
 try {
   await page.goto(
     process.env.DEMO_URL || "http://127.0.0.1:4173/zaizai-english/",
   );
-  await page.getByRole("heading", { name: "Can you find the dog?" }).waitFor();
+  await page
+    .getByRole("heading", { name: "Welcome to our English class!" })
+    .waitFor();
   await page.evaluate(async () => {
     await document.fonts.ready;
     await Promise.all([...document.images].map((image) => image.decode()));
   });
-  await pause(2200);
+  await pause(1800);
+  await click(
+    page.locator(".welcome-stage").getByRole("button", { name: "开始上课" }),
+  );
+  await click(page.getByRole("button", { name: "I’m good!", exact: true }));
+  await next();
+  await click(page.locator(".vocabulary-thumbnails button").nth(1));
+  await next();
   await click(page.getByRole("button", { name: "选择 cat", exact: true }));
   await click(page.getByRole("button", { name: "提示我一下" }));
+  await click(page.getByRole("button", { name: "选择 dog", exact: true }));
+  await click(page.getByRole("button", { name: "关闭状态提示" }), 300);
+  await next();
+  await click(page.getByRole("button", { name: "模拟再试一次" }), 1600);
+  await next();
+  await click(page.getByRole("button", { name: "I like birds.", exact: true }));
+  await next();
   await click(
-    page.getByRole("button", { name: "选择 dog", exact: true }),
-    2400,
+    page.getByRole("button", { name: "Yes, I have a cat.", exact: true }),
   );
-  await click(page.getByRole("button", { name: "关闭状态提示" }), 500);
-  await click(page.getByRole("tab", { name: "学习提示" }));
-  await click(page.getByRole("tab", { name: "课堂笔记" }), 600);
-  await page
-    .getByRole("textbox", { name: "本次课堂笔记" })
-    .fill("dog — 小狗\nrabbit — 兔子");
-  await pause(1800);
-  await click(page.getByRole("button", { name: "收起辅助面板" }), 2200);
-  await click(page.getByRole("button", { name: "展开辅助面板" }), 1200);
-  await click(page.getByRole("tab", { name: "课堂对话" }), 1000);
-  await click(page.getByRole("button", { name: "下一步", exact: true }));
-  await click(page.getByRole("button", { name: "选择 cat", exact: true }));
+  await next();
+  await click(page.getByRole("button", { name: "选择 bird", exact: true }));
+  await click(page.getByRole("button", { name: "关闭状态提示" }), 300);
+  await next();
+  await pause(1500);
+  await next();
+  const report = page.getByRole("region", { name: "家长学习报告" });
+  await click(report.getByRole("tab", { name: "学习数据", exact: true }), 1700);
+  await click(report.getByRole("tab", { name: "发音分析", exact: true }), 1700);
+  await next();
+  const archive = page.getByRole("region", { name: "长期英语档案" });
+  await click(archive.getByRole("button", { name: "近 3 次", exact: true }));
+  await click(archive.getByRole("tab", { name: "错题与复习", exact: true }));
   await click(
-    page.getByRole("button", { name: "麦克风 模拟", exact: true }),
-    1300,
-  );
-  await click(
-    page.getByRole("button", { name: "已静音 模拟", exact: true }),
-    700,
-  );
-  await click(
-    page.getByRole("button", { name: "暂停课堂", exact: true }),
-    1500,
+    archive.getByRole("button", { name: "标记复习", exact: true }).first(),
   );
   await click(
-    page.locator(".device-controls").getByRole("button", { name: "继续课堂" }),
-    700,
+    page
+      .getByRole("navigation")
+      .getByRole("button", { name: "课程", exact: true }),
+    1600,
   );
-  await click(page.getByRole("button", { name: "退出课堂", exact: true }), 700);
-  await click(page.getByRole("button", { name: "确认退出" }), 1700);
-  await click(page.getByRole("button", { name: "重新进入课堂" }), 1700);
   await click(
-    page.getByRole("button", { name: "重新开始", exact: true }),
-    2000,
+    page.getByRole("button", { name: "继续本次课堂", exact: true }),
+    500,
   );
   if (errors.length) throw new Error(errors.join("\n"));
 } finally {
   const video = page.video();
   await context.close();
-  if (video) await video.saveAs("demo/classroom-demo.webm");
+  if (video) await video.saveAs("demo/m2-classroom-demo.webm");
   await browser.close();
 }
-console.log("Saved actual M1 browser recording: demo/classroom-demo.webm");
+console.log("Saved actual M2 browser recording: demo/m2-classroom-demo.webm");

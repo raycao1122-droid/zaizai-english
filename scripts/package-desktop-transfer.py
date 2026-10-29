@@ -29,7 +29,7 @@ def main():
         '之后一直在同一文件夹继续。完整说明在 LOCAL_DEVELOPMENT.md。\n\n'
         '包内包含原始设计素材、现有代码、完整 Git 历史、截图和视频，'
         '不包含平台相关 node_modules；依赖会按锁文件在电脑安装。\n'
-        'GitHub 尚未上线；本机运行不依赖云端 GitHub API 放行。M1 尚待验收，不开发 M2。\n'
+        'GitHub 尚未上线；本机运行不依赖云端 GitHub API 放行。当前为 M2 模拟课堂，真实 AI、语音和后端尚未接入。\n'
     )
     with tempfile.TemporaryDirectory(prefix='zaizai-transfer-') as tmp:
         bundle = Path(tmp) / 'zaizai-english-history.bundle'

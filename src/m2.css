@@ -668,7 +668,7 @@
   font-weight: 800;
 }
 .report-tab-content {
-  flex: initial;
+  flex: 0 0 auto;
   min-height: 0;
 }
 .report-columns {
@@ -1678,7 +1678,7 @@
     grid-template-columns: 1fr;
   }
   .report-tab-content {
-    flex: initial;
+    flex: 0 0 auto;
   }
   .report-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));

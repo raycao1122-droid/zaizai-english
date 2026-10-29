@@ -1,15 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function openClass(page: Page) {
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Can you find the dog?" }),
-  ).toBeVisible();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all([...document.images].map((i) => i.decode()));
-  });
-}
+import { openExercise as openClass, goToStage } from "./helpers";
 
 async function closeToast(page: Page) {
   const close = page.getByRole("button", { name: "关闭状态提示" });
@@ -66,7 +57,7 @@ for (const [width, height] of [
       }
     }
     await page.screenshot({
-      path: `screenshots/${width === 1536 ? "01-default" : `layout-${width}x${height}`}.png`,
+      path: `screenshots/m2/${width === 1536 ? "01-default" : `layout-${width}x${height}`}.png`,
       fullPage: true,
       animations: "disabled",
     });
@@ -83,7 +74,9 @@ test("wrong choice, hint, correct choice and feedback are visible", async ({
   await expect(page.locator(".feedback")).toContainText("Not quite");
   await page.getByRole("button", { name: "提示我一下" }).click();
   await expect(
-    page.getByText("你能找到小狗吗？", { exact: true }),
+    page
+      .getByRole("region", { name: "英语动物课堂" })
+      .getByText("你能找到小狗吗？", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "选择 dog", exact: true }).click();
   await expect(page.locator(".animal-dog")).toHaveClass(/correct/);
@@ -93,13 +86,15 @@ test("wrong choice, hint, correct choice and feedback are visible", async ({
   );
   await closeToast(page);
   await page.screenshot({
-    path: "screenshots/02-interaction.png",
+    path: "screenshots/m2/02-interaction.png",
     fullPage: true,
     animations: "disabled",
   });
   await page.getByRole("button", { name: "收起提示" }).click();
   await expect(
-    page.getByText("你能找到小狗吗？", { exact: true }),
+    page
+      .getByRole("region", { name: "英语动物课堂" })
+      .getByText("你能找到小狗吗？", { exact: true }),
   ).not.toBeVisible();
 });
 
@@ -123,7 +118,7 @@ test("panel switches, collapses, expands, and preserves notes", async ({
     (await page.locator(".lesson-panel").boundingBox())!.width,
   ).toBeGreaterThan(before + 250);
   await page.screenshot({
-    path: "screenshots/03-panel-collapsed.png",
+    path: "screenshots/m2/03-panel-collapsed.png",
     fullPage: true,
     animations: "disabled",
   });
@@ -132,40 +127,45 @@ test("panel switches, collapses, expands, and preserves notes", async ({
     "rabbit — 兔子\ndog",
   );
   await page.getByRole("tab", { name: "课堂对话" }).click();
-  await expect(page.locator(".message-bubble")).toContainText("Hi, Zaizai!");
+  await expect(page.locator(".message-bubble").first()).toContainText(
+    "Hi, Zaizai!",
+  );
 });
 
-test("progress, directory, final step and reset stay within M1", async ({
+test("question rotation, directory and reset follow the 11-step lesson", async ({
   page,
 }) => {
   await openClass(page);
-  await page.getByRole("button", { name: "下一步", exact: true }).click();
+  await page.getByRole("button", { name: /换一题/ }).click();
   await expect(
     page.getByRole("heading", { name: "Can you find the cat?" }),
   ).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "2",
+    "4",
   );
-  await page.getByRole("button", { name: "课程目录", exact: true }).click();
-  await page.getByRole("button", { name: /4\s*找一找兔子/ }).click();
+  await goToStage(page, 7);
   await expect(
-    page.getByRole("heading", { name: "Can you find the rabbit?" }),
+    page.getByRole("heading", { name: "Which animal can fly?" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "下一步", exact: true }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "5",
+    "8",
   );
+  await page.getByRole("button", { name: "下一步", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Great job, Zaizai!" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "再练一次", exact: true }).click();
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
     "1",
   );
   await expect(
-    page.getByRole("heading", { name: "Can you find the dog?" }),
+    page.getByRole("heading", { name: "Welcome to our English class!" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "选择 dog" }).click();
+  await goToStage(page, 3);
+  await page.getByRole("button", { name: "选择 dog", exact: true }).click();
   await page.getByRole("button", { name: "重新开始", exact: true }).click();
   await expect(page.locator(".animal-card.correct")).toHaveCount(0);
 });
@@ -241,7 +241,7 @@ test("exit and reenter preserve lesson; restart returns to first exercise", asyn
   page,
 }) => {
   await openClass(page);
-  await page.getByRole("button", { name: "下一步", exact: true }).click();
+  await page.getByRole("button", { name: /换一题/ }).click();
   await page.getByRole("button", { name: "退出课堂", exact: true }).click();
   await page.getByRole("button", { name: "确认退出" }).click();
   await expect(page.getByRole("heading", { name: "课堂已退出" })).toBeVisible();
@@ -253,24 +253,31 @@ test("exit and reenter preserve lesson; restart returns to first exercise", asyn
   await page.getByRole("button", { name: "确认退出" }).click();
   await page.getByRole("button", { name: "从头开始" }).click();
   await expect(
-    page.getByRole("heading", { name: "Can you find the dog?" }),
+    page.getByRole("heading", { name: "Welcome to our English class!" }),
   ).toBeVisible();
 });
 
-test("other navigation is explicit, dialogs close with Escape and restore focus", async ({
+test("M2 navigation opens libraries and dialogs restore focus", async ({
   page,
 }) => {
   await openClass(page);
-  for (const name of ["课程", "单词本", "错题本", "学习报告"]) {
+  for (const name of ["课程", "单词本", "错题本"]) {
     const trigger = page
       .getByRole("navigation")
       .getByRole("button", { name, exact: true });
     await trigger.click();
-    await expect(page.getByRole("dialog")).toContainText(`「${name}」待开发。`);
+    await expect(page.getByRole("dialog", { name, exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(trigger).toBeFocused();
   }
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习报告", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "家长学习报告" }),
+  ).toBeVisible();
 });
 
 test("settings translation and text answers are local and explicit", async ({
@@ -281,7 +288,9 @@ test("settings translation and text answers are local and explicit", async ({
   await page.getByRole("button", { name: "在在的课堂设置" }).click();
   await page.getByRole("checkbox", { name: "显示中文翻译" }).check();
   await page.getByRole("button", { name: "关闭弹窗" }).click();
-  await expect(page.locator(".translation")).toContainText("你好，在在");
+  await expect(page.locator(".translation").first()).toContainText(
+    "你好，在在",
+  );
   const input = page.getByRole("textbox", { name: "输入英文模拟回答" });
   await input.fill("dog");
   await page.getByRole("button", { name: "发送模拟回答" }).click();
@@ -289,7 +298,7 @@ test("settings translation and text answers are local and explicit", async ({
   await input.fill("hello Emma");
   await input.press("Enter");
   await expect(page.locator(".message-bubble").last()).toContainText(
-    "Let’s practice one animal word: dog.",
+    "Let’s try one of the example answers on the lesson card.",
   );
   await page.getByRole("button", { name: "模拟播放课堂提问" }).click();
   await expect(page.locator(".toast")).toContainText("尚未接入音频或语音 API");
@@ -335,7 +344,7 @@ test("M1 refinement: pause preserves an unsent answer until resume", async ({
   await expect(input).toHaveValue("dog");
   await closeToast(page);
   await page.screenshot({
-    path: "screenshots/05-paused-draft.png",
+    path: "screenshots/m2/05-paused-draft.png",
     fullPage: true,
     animations: "disabled",
   });
@@ -355,11 +364,11 @@ test("M1 refinement: paused classroom also locks directory navigation", async ({
   await openClass(page);
   await page.getByRole("button", { name: "暂停课堂", exact: true }).click();
   await page.getByRole("button", { name: "课程目录", exact: true }).click();
-  const target = page.getByRole("button", { name: /4\s*找一找兔子/ });
+  const target = page.getByRole("button", { name: /8\s*课堂复习/ });
   await expect(target).toBeDisabled();
   await expect(page.getByRole("progressbar")).toHaveAttribute(
     "aria-valuenow",
-    "1",
+    "4",
   );
   await page.keyboard.press("Escape");
   await page
@@ -369,7 +378,7 @@ test("M1 refinement: paused classroom also locks directory navigation", async ({
   await page.getByRole("button", { name: "课程目录", exact: true }).click();
   await target.click();
   await expect(
-    page.getByRole("heading", { name: "Can you find the rabbit?" }),
+    page.getByRole("heading", { name: "Which animal can fly?" }),
   ).toBeVisible();
 });
 
@@ -382,7 +391,7 @@ test("M1 refinement: wrong choice still allows a useful animal hint", async ({
   await expect(page.locator(".hint-text")).toContainText("floppy ears");
   await closeToast(page);
   await page.screenshot({
-    path: "screenshots/04-retry-hint.png",
+    path: "screenshots/m2/04-retry-hint.png",
     fullPage: true,
     animations: "disabled",
   });

@@ -66,38 +66,59 @@ try {
       badResponses.push(`${response.status()} ${response.url()}`);
   });
   await page.goto(origin + prefix);
-  await page.getByRole("heading", { name: "Can you find the dog?" }).waitFor();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all([...document.images].map((image) => image.decode()));
-  });
-  const imagePaths = await page
-    .locator("img")
-    .evaluateAll((images) =>
-      images.map((image) => new URL(image.src).pathname),
+  await page
+    .getByRole("heading", { name: "Welcome to our English class!" })
+    .waitFor();
+  async function validateImages() {
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all([...document.images].map((image) => image.decode()));
+    });
+    const paths = await page
+      .locator("img")
+      .evaluateAll((images) =>
+        images.map((image) => new URL(image.src).pathname),
+      );
+    assert(
+      paths.every((path) => path.startsWith(prefix + "assets/")),
+      "Images must use the Pages prefix",
     );
-  assert(
-    imagePaths.every((path) => path.startsWith(prefix + "assets/")),
-    "Images must use the Pages prefix",
-  );
+  }
+  async function stage(index) {
+    await page.getByRole("button", { name: "课程目录", exact: true }).click();
+    await page.locator(".directory-list button").nth(index).click();
+    await validateImages();
+  }
+  await validateImages();
+  await stage(3);
   await page.getByRole("button", { name: "选择 dog", exact: true }).click();
   assert(
     await page
       .locator(".animal-dog")
       .evaluate((card) => card.classList.contains("correct")),
   );
-  await page.getByRole("tab", { name: "学习提示" }).click();
+  await page.getByRole("tab", { name: "学习提示", exact: true }).click();
   await page.getByRole("heading", { name: "Take your time." }).waitFor();
   await page.getByRole("button", { name: "收起辅助面板" }).click();
   await page.getByRole("button", { name: "展开辅助面板" }).click();
-  await page.getByRole("heading", { name: "Take your time." }).waitFor();
-  await page.getByRole("tab", { name: "课堂对话" }).click();
-  await page.getByRole("button", { name: "下一步", exact: true }).click();
-  await page.getByRole("heading", { name: "Can you find the cat?" }).waitFor();
+  await page.getByRole("tab", { name: "课堂对话", exact: true }).click();
+  await stage(4);
+  await page.getByRole("button", { name: "模拟再试一次" }).click();
+  await page.getByText("示例切换 1 次").waitFor();
+  await stage(6);
+  await page
+    .getByRole("button", { name: "Yes, I have a cat.", exact: true })
+    .click();
+  await stage(7);
+  await page.getByRole("button", { name: "选择 bird", exact: true }).click();
+  await stage(9);
+  await page.getByRole("region", { name: "家长学习报告" }).waitFor();
+  await stage(10);
+  await page.getByRole("region", { name: "长期英语档案" }).waitFor();
   assert.deepEqual(errors, [], "Production browser errors");
   assert.deepEqual(badResponses, [], "Production asset failures");
   console.log(
-    `PASS: production build at ${prefix}; all artwork uses the prefix; animal feedback, tabs, panel and progression work; no failed requests or browser errors.`,
+    `PASS: production build at ${prefix}; all artwork uses the prefix; M2 animal feedback, pronunciation demo, scenario, reports and archive work; no failed requests or browser errors.`,
   );
 } finally {
   if (browser) await browser.close();

@@ -28,7 +28,7 @@ fi
 
 echo "项目目录：$PWD"
 echo "课堂将在本机 http://127.0.0.1:$lesson_port 打开。"
-echo '保留这个终端窗口；按 Control+C 可停止。当前仅为 M1 模拟课堂。'
+echo '保留这个终端窗口；按 Control+C 可停止。当前为 M2 模拟课堂。'
 if [[ "${ZAIZAI_NO_OPEN:-0}" != '1' ]]; then
   node scripts/open-local-browser.mjs "$lesson_port" &
 fi
