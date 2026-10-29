@@ -74,7 +74,7 @@
 
 启动方式沿用 README、`start-local.command` 和 `LOCAL_DEVELOPMENT.md`。课堂数据、流程、模拟报告和状态更新分别在 `src/data/`、`src/hooks/useClassroom.ts` 和独立组件中维护。
 
-代码与截图按里程碑提交同一个 Git 仓库。用户授权发布后，代码、完整历史和 M1 标签已上传至 `raycao1122-droid/zaizai-english`；GitHub Actions 的生产构建已通过。Pages 开通 API 被当前集成权限拒绝，部署提示需要在仓库 Pages 设置中选择 GitHub Actions。网站尚未确认上线，最新发布状态见 DEPLOYMENT.md。M2 完成后等待用户验收，不自行进入 M3。
+代码与截图按里程碑提交同一个 Git 仓库。用户授权发布后，代码、完整历史和 M1 标签已上传至 `raycao1122-droid/zaizai-english`；GitHub Actions 的生产构建已通过。用户在 Pages 设置中选择 GitHub Actions 后，发布重试成功。公网测试地址为 https://raycao1122-droid.github.io/zaizai-english/ 。线上 32 个文件的 SHA-256 与发布产物逐一一致，产物在 Chromium 中的子路径交互检查通过；完整验证边界见 DEPLOYMENT.md。M2 完成后等待用户验收，不自行进入 M3。
 
 ## 电脑离线验收包
 
@@ -82,4 +82,4 @@
 
 `scripts/build-offline-preview.mjs` 从同一 M2 源码生成普通 IIFE 脚本、相对资源和内嵌字体；保留原图素材，不新增功能或接入 M3。`scripts/check-offline-preview.mjs` 已对实际 ZIP 解压文件通过 11 环节、素材解码、对错反馈、模拟重试、CSV 下载内容和资料登记检查，未出现页面错误、资源失败、外部网络请求或上传。
 
-云端 Chromium 直接打开文件时返回 `ERR_BLOCKED_BY_ADMINISTRATOR`；未绕过管理策略。上述交互验证通过临时静态服务器加载同一批文件完成，双击文件方式及用户的 Mac/Safari 仍待实际验收。公网网址尚未发布。
+云端 Chromium 直接打开文件时返回 `ERR_BLOCKED_BY_ADMINISTRATOR`；未绕过管理策略。上述交互验证通过临时静态服务器加载同一批文件完成，双击文件方式及用户的 Mac/Safari 仍待实际验收。公网 M2 测试网址现已发布，见上文。

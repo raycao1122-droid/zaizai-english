@@ -18,7 +18,7 @@ npm ci --cache /workspace/.cache/npm
 npm run dev -- --port 5173 --strictPort
 ```
 
-开发服务器只监听本机，不能直接从手机访问。源码和 Git 历史已上传至 [GitHub 仓库](https://github.com/raycao1122-droid/zaizai-english)；公网网站仍待开通 GitHub Pages，详见 DEPLOYMENT.md。
+在线测试：[打开 M2 课堂](https://raycao1122-droid.github.io/zaizai-english/)。GitHub Pages 已发布，电脑或手机浏览器均可访问；课堂视觉以电脑或平板横屏为主。源码和完整 Git 历史在 [GitHub 仓库](https://github.com/raycao1122-droid/zaizai-english)，发布验证见 DEPLOYMENT.md。开发服务器仍仅监听本机。
 
 ```bash
 npm run build
@@ -30,7 +30,7 @@ npm run test:e2e
 
 ## GitHub Pages 发布
 
-已为用户要求的 GitHub 部署准备自动发布工作流及仓库子路径资源适配。发布步骤、实际验证和当前网络阻塞见 [DEPLOYMENT.md](DEPLOYMENT.md)。发布范围为当前 M2 模拟前端，真实 AI 与语音属于后续 M3。
+GitHub Pages 已成功上线，自动发布工作流和仓库子路径资源适配均已验证。发布步骤、实际验证及权限说明见 [DEPLOYMENT.md](DEPLOYMENT.md)。发布范围为当前 M2 模拟前端，真实 AI 与语音属于后续 M3。
 
 ```bash
 PAGES_BASE_PATH=/zaizai-english/ npm run build
