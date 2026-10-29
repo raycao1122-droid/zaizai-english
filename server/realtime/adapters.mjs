@@ -187,9 +187,6 @@ export class QwenRealtimeAdapter extends EventEmitter {
       });
     });
   }
-  startGreeting() {
-    if (this.ready) this.send({ type: "response.create" });
-  }
   cancelResponse() {
     this.cancelId = "cancel-" + Date.now();
     this.send({ type: "response.cancel", event_id: this.cancelId });

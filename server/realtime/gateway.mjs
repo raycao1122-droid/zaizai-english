@@ -510,7 +510,6 @@ export function createVoiceGateway(
           live = true;
           lastAudioAt = Date.now();
           send({ type: "ready" });
-          adapter.startGreeting?.();
         })
         .catch((error) => end(error.message));
     });
