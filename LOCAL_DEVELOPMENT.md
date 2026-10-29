@@ -25,7 +25,7 @@
 
 可以把这段说明作为本地任务的起始消息：
 
-> 继续当前文件夹里的「在在的英语课堂」。这是从云端迁移的已有 Git 项目，请先读 AGENTS.md、design/CODEX_START_HERE.md、design/FRONTEND_SPEC.md、design/ACCEPTANCE_CHECKLIST.md、M1_DELIVERY.md、M2_DELIVERY.md 和 LOCAL_DEVELOPMENT.md。保留原始 Emma 和动物素材、现有界面及全部 Git 历史，不重建项目。当前已授权 M2，先启动并验证完整 11 环节及模拟报告；不要自行进入 M3。每次完成修改后提交 Git。GitHub Pages 的配置已准备，但云端 API 网络受限，尚未创建远端仓库或上线。
+> 继续当前文件夹里的「在在的英语课堂」。这是从云端迁移的已有 Git 项目，请先读 AGENTS.md、design/CODEX_START_HERE.md、design/FRONTEND_SPEC.md、design/ACCEPTANCE_CHECKLIST.md、M1_DELIVERY.md、M2_DELIVERY.md 和 LOCAL_DEVELOPMENT.md。保留原始 Emma 和动物素材、现有界面及全部 Git 历史，不重建项目。当前已授权 M2，先启动并验证完整 11 环节及模拟报告；不要自行进入 M3。每次完成修改后提交 Git。源码已上传至 raycao1122-droid/zaizai-english，网站发布的最新状态见 DEPLOYMENT.md。
 
 ## 手动运行与验证
 
@@ -48,6 +48,6 @@ npm run test:e2e
 
 ## 保存与同步
 
-在同一本地文件夹中持续修改并提交 Git。文件、原始设计、截图和操作视频均留在该项目内。当前没有 GitHub 远端；本地改动不会自动同步回这条云端聊天或 GitHub。之后需要跨设备同步时，再连接同一个远端仓库。
+在同一本地文件夹中持续修改并提交 Git。文件、原始设计、截图和操作视频均留在该项目内。云端项目已连接 `https://github.com/raycao1122-droid/zaizai-english.git`；旧迁移包不会自动获得新远端和后续提交，本地改动也不会自动同步回这条云端聊天。跨设备迭代应使用同一远端，先检查和保留各自未提交的改动，再按需要拉取或推送。
 
 启动脚本在云端以一个新位置解压的项目验证过依赖安装、启动和网页交互；Mac 的 `open` 浏览器行为仍需在你的电脑执行后确认，不能把云端验证当成已经操作了你的电脑。

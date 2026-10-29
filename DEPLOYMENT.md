@@ -7,7 +7,7 @@
 - `.github/workflows/pages.yml`：推送 `main` 或手动触发后，用 Node 24、`npm ci` 构建，再通过 GitHub Pages 官方 Actions 发布。
 - 构建时根据实际仓库名设置 `PAGES_BASE_PATH`；所有角色、动物和场景文件使用对应前缀，支持 GitHub Pages 的仓库子目录。
 - 源代码及既有 Git 历史继续保留在 `/workspace/zaizai-english`，不混入 ContentFlow。
-- 默认计划使用单独的 `raycao1122-droid/zaizai-english` 仓库；在身份和仓库权限核实后才创建和推送，不能仅根据名称假设远端已存在。
+- 独立公开仓库为 `https://github.com/raycao1122-droid/zaizai-english`。用户创建空仓库后，已确认可读取及上传，并推送原有 `main` 历史和 `m1-complete` 标签。
 
 ## 本地发布检查
 
@@ -36,6 +36,8 @@ npm run test:e2e
 
 读取 `raycao1122-droid/zaizai-english` 返回 404，尚不能确认存在可访问的目标仓库。按已授权的发布要求尝试创建独立公开仓库：`gh repo create` 的 GraphQL `createRepository` 被拒绝；标准 REST `POST /user/repos` 同样返回 HTTP 403、`Resource not accessible by integration`。这次失败来自 GitHub 集成权限，不是云端网络拒绝。
 
-下一步需用户在 GitHub 创建 `raycao1122-droid/zaizai-english` 空的公开仓库，不预建 README、许可或 .gitignore，以保留当前项目完整历史。创建后重新验证 API 和 Git HTTPS 的访问权限；如现有集成不能访问新仓库，再明确指出需要授权的仓库范围，不要求在聊天中提供 Token。
+用户之后已创建上述空的公开仓库。API 返回该仓库的 `admin` / `push` 权限为 true；HTTPS `git push -u origin main` 及 M1 标签推送成功，远端提交 SHA 与本项目一致。仓库权限标记不代表当前集成具备每一种 API 权限。
 
-尚未设置远端、推送代码、配置 Pages 或确认网站上线；没有修改 ContentFlow。仓库可访问后，继续上述操作顺序并验证最终真实网址。
+当前阻塞已转为 Pages 开通权限：`POST /repos/raycao1122-droid/zaizai-english/pages` 返回 HTTP 403、`Resource not accessible by integration`；读取 Pages 站点返回 404。GitHub Actions 已识别并运行现有发布工作流，运行 `40814949659` 的安装、构建和上传网站产物均通过；部署步骤返回 404，明确提示先在仓库设置中启用 Pages。
+
+用户需打开 `https://github.com/raycao1122-droid/zaizai-english/settings/pages`，在 **Build and deployment → Source** 选择 **GitHub Actions**。之后重新检查 Pages 配置，重试发布工作流，等部署成功并验证实际网址。现在只确认源码已上传、远端构建成功，尚未确认网站上线。没有修改 ContentFlow。

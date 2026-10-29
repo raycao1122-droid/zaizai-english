@@ -74,7 +74,7 @@
 
 启动方式沿用 README、`start-local.command` 和 `LOCAL_DEVELOPMENT.md`。课堂数据、流程、模拟报告和状态更新分别在 `src/data/`、`src/hooks/useClassroom.ts` 和独立组件中维护。
 
-代码与截图按里程碑提交同一个 Git 仓库。当前仍是云环境中的开发版本，GitHub Pages 的源码/发布准备已经存在，但远端仓库与网站尚未确认上线。M2 完成后等待用户验收，不自行进入 M3。
+代码与截图按里程碑提交同一个 Git 仓库。用户授权发布后，代码、完整历史和 M1 标签已上传至 `raycao1122-droid/zaizai-english`；GitHub Actions 的生产构建已通过。Pages 开通 API 被当前集成权限拒绝，部署提示需要在仓库 Pages 设置中选择 GitHub Actions。网站尚未确认上线，最新发布状态见 DEPLOYMENT.md。M2 完成后等待用户验收，不自行进入 M3。
 
 ## 电脑离线验收包
 
