@@ -1,0 +1,29 @@
+# Review-only deployment template. No service has been created.
+# Confirm pricing and the Free plan in Render before manual creation.
+services:
+  - type: web
+    name: zaizai-classroom-api
+    runtime: node
+    plan: free
+    branch: m3-text-integration
+    autoDeployTrigger: off
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run start:api
+    healthCheckPath: /api/voice/config
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: CLASSROOM_HOST
+        value: 0.0.0.0
+      - key: ALLOWED_ORIGINS
+        value: https://raycao1122-droid.github.io
+      - key: DASHSCOPE_REGION
+        value: cn-beijing
+      - key: DASHSCOPE_API_KEY
+        sync: false
+      - key: DASHSCOPE_WORKSPACE_ID
+        sync: false
+      - key: CLASSROOM_ACCESS_CODE
+        sync: false

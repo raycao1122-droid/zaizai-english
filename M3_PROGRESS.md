@@ -1,6 +1,10 @@
-# M3 进度：文字对话接入准备
+# M3 进度：文字及实时语音配置
 
-用户已接受 M2 并授权下一阶段；M2 检查点为 `m2-accepted`。继续使用同一项目。当前首先实现文字对话，语音、发音评估、人物驱动与学习数据服务尚未实现。
+最新增量已加入紧凑的语音厂商选择、AI 服务配置、百炼实时语音适配代码和带鉴权的 WebSocket 中转。尚无百炼 Key/业务空间，真实语音未完成联调，未部署公网后端。详见 [REALTIME_VOICE_DELIVERY.md](REALTIME_VOICE_DELIVERY.md) 与 [AI_SERVICE_SETUP.md](AI_SERVICE_SETUP.md)。
+
+下文保留前一轮文字阶段记录，仅反映该阶段的状态；之前配置的 OpenAI Key 实测返回 `401 invalid_api_key`。本轮按用户新要求优先百炼，不以文字 Key 是否存在判断实时语音可用。
+
+用户已接受 M2 并授权下一阶段；M2 检查点为 `m2-accepted`。继续使用同一项目。
 
 ## 当前实现
 

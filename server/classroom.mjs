@@ -3,11 +3,12 @@ import { createServer } from "node:http";
 export function createClassroomServer({
   env = process.env,
   request = fetch,
+  beforeRequest,
+  origins,
 } = {}) {
-  const allowedOrigins = new Set([
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
-  ]);
+  const allowedOrigins = new Set(
+    origins || ["http://127.0.0.1:5173", "http://localhost:5173"],
+  );
   const reply = (res, status, data) =>
     res
       .writeHead(status, {
@@ -16,6 +17,7 @@ export function createClassroomServer({
       })
       .end(JSON.stringify(data));
   return createServer(async (req, res) => {
+    if (beforeRequest && (await beforeRequest(req, res))) return;
     const origin = req.headers.origin;
     if (origin && !allowedOrigins.has(origin))
       return reply(res, 403, { error: "不允许的请求来源。" });

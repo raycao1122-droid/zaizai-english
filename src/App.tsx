@@ -29,6 +29,8 @@ import {
   type CurriculumMaterial,
   type MockSession,
 } from "./data/mockReports";
+import { AiServiceConfig } from "./components/AiServiceConfig";
+import { useRealtimeVoice } from "./hooks/useRealtimeVoice";
 import { voiceCycle } from "./data/mockLesson";
 
 export default function App() {
@@ -54,12 +56,41 @@ export default function App() {
   );
   const [archiveView, setArchiveView] = useState(createArchiveView);
   const [reportFromArchive, setReportFromArchive] = useState(false);
+  const realtime = useRealtimeVoice({
+    context: {
+      stage: context.step.title,
+      prompt: context.prompt,
+      target: context.target,
+      material:
+        materials.find((m) => m.id === librarySelection)?.name ||
+        "未选择；Animals 示例课堂",
+      choices: state.choices.length,
+      hints: state.hintRequests,
+      history: state.messages
+        .slice(-8)
+        .map((m) => ({ speaker: m.speaker, text: m.text })),
+    },
+    onTranscript: (message) => dispatch({ type: "voice-message", message }),
+  });
+  const voiceActive =
+    realtime.status === "connected" || realtime.status === "connecting";
+  useEffect(() => {
+    if ((state.paused || state.exited) && voiceActive)
+      realtime.disconnect(
+        "课堂已暂停或退出，真实语音已断开；继续后请手动连接。",
+      );
+  }, [state.paused, state.exited, voiceActive]);
   const voice = state.paused
     ? "paused"
-    : state.muted
-      ? "muted"
-      : state.baseVoice;
+    : realtime.status === "connected"
+      ? realtime.muted
+        ? "muted"
+        : realtime.phase
+      : state.muted
+        ? "muted"
+        : state.baseVoice;
   async function sendAnswer(text: string) {
+    if (voiceActive) return false;
     if (!aiEnabled) {
       dispatch({ type: "answer", text });
       return true;
@@ -70,10 +101,13 @@ export default function App() {
     setAiBusy(true);
     const timeout = setTimeout(() => controller.abort(), 35000);
     try {
-      const response = await fetch("/api/classroom/reply", {
+      const response = await fetch(`${realtime.base}/api/classroom/reply`, {
         method: "POST",
         signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...realtime.authHeaders(),
+        },
         body: JSON.stringify({
           text,
           prompt: context.prompt,
@@ -114,7 +148,7 @@ export default function App() {
       return;
     }
     try {
-      const response = await fetch("/api/health", {
+      const response = await fetch(`${realtime.base}/api/health`, {
         signal: AbortSignal.timeout(5000),
       });
       const health = await response.json();
@@ -149,6 +183,7 @@ export default function App() {
     return true;
   }
   function reset() {
+    realtime.disconnect("课堂已重置，真实语音已断开。");
     aiRequest.current?.abort();
     setAiBusy(false);
     dispatch({ type: "reset" });
@@ -283,7 +318,10 @@ export default function App() {
             </LessonStage>
             <ConversationPanel
               hidden={state.collapsed}
-              disabled={state.paused || aiBusy}
+              disabled={state.paused || aiBusy || voiceActive}
+              realtime={realtime}
+              voiceBlocked={state.paused || aiBusy}
+              onServiceConfig={() => setModal("AI 服务配置")}
               isAi={aiEnabled}
               waiting={aiBusy}
               tab={state.panelTab}
@@ -319,7 +357,19 @@ export default function App() {
           </main>
           <VoiceControlBar
             voice={voice}
-            muted={state.muted}
+            realVoice={
+              voiceActive
+                ? {
+                    status:
+                      realtime.status === "connecting"
+                        ? "正在连接…"
+                        : realtime.message,
+                    connected: realtime.status === "connected",
+                    onDisconnect: () => realtime.disconnect(),
+                  }
+                : undefined
+            }
+            muted={voiceActive ? realtime.muted : state.muted}
             paused={state.paused}
             speed={state.speed}
             nextLabel={
@@ -331,7 +381,9 @@ export default function App() {
             }
             onExit={() => setModal("退出课堂")}
             onCamera={() => setModal("摄像头")}
-            onMute={() => dispatch({ type: "mute" })}
+            onMute={() =>
+              voiceActive ? realtime.toggleMute() : dispatch({ type: "mute" })
+            }
             onPause={() => dispatch({ type: "pause" })}
             onCycle={() =>
               dispatch({
@@ -427,14 +479,26 @@ export default function App() {
             </>
           ) : modal === "课堂设置" ? (
             <>
+              <button
+                className="soft-button ai-config-entry"
+                onClick={() => setModal("AI 服务配置")}
+              >
+                <Settings2 size={18} /> AI 服务配置{" "}
+                <span>
+                  {realtime.selectedProvider.name} ·{" "}
+                  {realtime.selectedProvider.configured ? "待验证" : "未配置"}
+                </span>
+              </button>
               <p className="muted-copy">
-                以下仅改变本次前端演示，不访问任何设备。
+                默认仍为演示；真实语音需在 AI
+                服务配置中主动连接，届时会请求麦克风权限。
               </p>
               <label className="setting-row">
                 <span>真实 AI 文字对话（M3）</span>
                 <input
                   type="checkbox"
                   checked={aiEnabled}
+                  disabled={voiceActive}
                   onChange={(event) => void enableAi(event.target.checked)}
                 />
               </label>
@@ -444,8 +508,9 @@ export default function App() {
                 </p>
               )}
               <p className="muted-copy">
-                开启后，仅输入框对话使用
-                AI；需启动课堂后端。课件按钮、语音、评分与报告仍为演示。
+                开启后，仅输入框对话使用 AI（现有 OpenAI
+                文字通道）；需启动课堂后端。课件按钮、评分与报告仍为演示，真实语音通过
+                AI 服务配置单独连接。
               </p>
               <label className="setting-row">
                 <span>显示中文翻译</span>
@@ -470,9 +535,15 @@ export default function App() {
               </div>
               <p className="notice-copy">
                 M2
-                的纠音、报告和档案为模拟内容；真实文字对话按上方开关配置；语音、摄像头与学习数据服务尚未接入。
+                的纠音、报告和档案为模拟内容；真实文字对话按上方开关配置；实时语音请通过
+                AI 服务配置单独连接；摄像头与学习数据服务尚未接入。
               </p>
             </>
+          ) : modal === "AI 服务配置" ? (
+            <AiServiceConfig
+              voice={realtime}
+              blocked={state.paused || state.exited || aiBusy}
+            />
           ) : modal === "课程目录" ? (
             <>
               <p className="muted-copy">

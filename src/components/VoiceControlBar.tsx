@@ -12,6 +12,7 @@ import { voiceLabels, type VoiceState } from "../data/mockLesson";
 
 export function VoiceControlBar({
   voice,
+  realVoice,
   muted,
   paused,
   speed,
@@ -27,6 +28,7 @@ export function VoiceControlBar({
   onNext,
 }: {
   voice: VoiceState;
+  realVoice?: { status: string; connected: boolean; onDisconnect: () => void };
   muted: boolean;
   paused: boolean;
   speed: string;
@@ -62,7 +64,7 @@ export function VoiceControlBar({
           {muted ? <MicOff size={29} /> : <Mic size={29} />}
           <span>
             {muted ? "已静音" : "麦克风"}
-            <small>模拟</small>
+            <small>{realVoice ? "真实语音" : "模拟"}</small>
           </span>
         </button>
         <button
@@ -83,9 +85,10 @@ export function VoiceControlBar({
           </div>
           <button
             className="voice-orb"
-            onClick={onCycle}
-            aria-label="切换语音模拟状态"
-            title="仅切换模拟状态，不录音"
+            onClick={realVoice ? onMute : onCycle}
+            aria-label={realVoice ? "切换真实语音静音" : "切换语音模拟状态"}
+            title={realVoice ? "真实麦克风静音" : "仅切换模拟状态，不录音"}
+            disabled={Boolean(realVoice && !realVoice.connected)}
           >
             {muted ? <MicOff size={43} /> : <Mic size={43} />}
           </button>
@@ -96,20 +99,31 @@ export function VoiceControlBar({
           </div>
         </div>
         <label className="voice-state-label">
-          <select
-            aria-label="语音模拟状态"
-            value={voice}
-            onChange={(e) => onVoice(e.target.value as VoiceState)}
-          >
-            {Object.entries(voiceLabels).map(([v, text]) => (
-              <option key={v} value={v}>
-                {text} · 模拟
-              </option>
-            ))}
-          </select>
+          {realVoice ? (
+            <button
+              className="voice-disconnect"
+              onClick={realVoice.onDisconnect}
+            >
+              断开真实语音
+            </button>
+          ) : (
+            <select
+              aria-label="语音模拟状态"
+              value={voice}
+              onChange={(e) => onVoice(e.target.value as VoiceState)}
+            >
+              {Object.entries(voiceLabels).map(([v, text]) => (
+                <option key={v} value={v}>
+                  {text} · 模拟
+                </option>
+              ))}
+            </select>
+          )}
         </label>
         <span className="voice-caption">
-          连续语音演示 · AI / 语音 API 尚未接入
+          {realVoice
+            ? realVoice.status
+            : "连续语音演示 · AI / 语音 API 尚未接入"}
         </span>
       </div>
       <div className="speed-control" aria-label="模拟语速">

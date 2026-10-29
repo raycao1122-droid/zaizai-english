@@ -1,3 +1,4 @@
+import type { RealtimeVoice } from "../hooks/useRealtimeVoice";
 import { useEffect, useRef } from "react";
 import {
   MessageCircle,
@@ -25,6 +26,9 @@ export function ConversationPanel({
   disabled,
   isAi = false,
   waiting = false,
+  realtime,
+  voiceBlocked,
+  onServiceConfig,
   tab,
   draft,
   notes,
@@ -42,6 +46,9 @@ export function ConversationPanel({
   disabled: boolean;
   isAi?: boolean;
   waiting?: boolean;
+  realtime: RealtimeVoice;
+  voiceBlocked: boolean;
+  onServiceConfig: () => void;
   tab: PanelTab;
   draft: string;
   notes: string;
@@ -67,6 +74,35 @@ export function ConversationPanel({
       aria-label="课堂辅助面板"
       hidden={hidden}
     >
+      <div className="panel-model-row">
+        <span>语音模型</span>
+        <select
+          aria-label="实时语音模型"
+          title={
+            realtime.locked
+              ? "会话中不可切换；断开后或下次会话选择"
+              : "选择下次语音会话使用的模型"
+          }
+          value={realtime.selected}
+          disabled={realtime.locked}
+          onChange={(e) =>
+            realtime.select(e.target.value as typeof realtime.selected)
+          }
+        >
+          {realtime.providers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+              {p.id === realtime.selected &&
+              (realtime.status === "connected" ||
+                realtime.status === "connecting")
+                ? " · 会话中"
+                : p.configured
+                  ? " · 待验证"
+                  : " · 未配置"}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="panel-top">
         <div
           className="panel-tabs"
@@ -109,10 +145,54 @@ export function ConversationPanel({
         {tab === "conversation" && (
           <>
             <div className="conversation-note">
-              {isAi
-                ? "AI 文字对话 · 课件和语音仍为演示"
-                : "本地脚本对话 · 未接入 AI"}
+              {realtime.status === "connected"
+                ? "真实语音 · 课件和报告仍为演示"
+                : isAi
+                  ? "AI 文字对话 · 课件和语音仍为演示"
+                  : "本地脚本对话 · 未接入 AI"}
             </div>
+            <div className="voice-session-tools">
+              <button onClick={onServiceConfig}>AI 服务配置</button>
+              {realtime.status === "connected" ||
+              realtime.status === "connecting" ? (
+                <>
+                  <button onClick={() => realtime.disconnect()}>
+                    断开语音
+                  </button>
+                  {realtime.status === "connected" && (
+                    <button
+                      onClick={realtime.toggleMute}
+                      aria-pressed={realtime.muted}
+                    >
+                      {realtime.muted ? "取消静音" : "语音静音"}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <button
+                  disabled={voiceBlocked || realtime.locked}
+                  onClick={() => {
+                    if (
+                      !realtime.authorized ||
+                      !realtime.selectedProvider.configured
+                    )
+                      onServiceConfig();
+                    else void realtime.connect();
+                  }}
+                >
+                  {realtime.status === "error" ? "重新连接" : "连接语音"}
+                </button>
+              )}
+            </div>
+            <p
+              className={`voice-connection-status ${realtime.status === "error" ? "has-error" : ""}`}
+              role="status"
+            >
+              {realtime.message}
+            </p>
+            {realtime.liveSubtitle && (
+              <p className="voice-live-caption">{realtime.liveSubtitle}</p>
+            )}
             <div className="message-list">
               {messages.map((message) => (
                 <div
@@ -131,6 +211,9 @@ export function ConversationPanel({
                   <div className="message-content">
                     <div className="message-label">
                       {message.speaker}
+                      {message.source === "voice" && (
+                        <small className="voice-source-label">实时字幕</small>
+                      )}
                       <button
                         className="small-audio"
                         aria-label={`模拟播放${message.speaker}对话`}

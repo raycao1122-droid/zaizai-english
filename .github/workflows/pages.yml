@@ -27,6 +27,8 @@ jobs:
         run: npm run build
         env:
           PAGES_BASE_PATH: /${{ github.event.repository.name }}/
+          # Public URL only. API keys must never be GitHub Pages build inputs.
+          VITE_CLASSROOM_API_URL: ${{ vars.CLASSROOM_API_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

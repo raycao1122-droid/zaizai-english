@@ -53,6 +53,10 @@ type Action =
   | { type: "navigate"; index: number }
   | { type: "select"; animal: AnimalId }
   | { type: "answer"; text: string }
+  | {
+      type: "voice-message";
+      message: { id: string; speaker: "Emma" | "在在"; text: string };
+    }
   | { type: "ai-reply"; text: string; reply: string; step: number }
   | { type: "question" }
   | { type: "retry" }
@@ -301,6 +305,22 @@ function reducer(state: ClassroomState, action: Action): ClassroomState {
           text: "Let’s try this example together: cat.",
           translation: "切换一次模拟跟读示例；未录音、识别或评分。",
         }),
+      };
+    }
+    case "voice-message": {
+      if (state.paused || state.exited) return state;
+      const item: Message = {
+        ...action.message,
+        source: "voice",
+        translation: "实时语音字幕；未进行发音评分，未写入学习档案。",
+      };
+      const index = state.messages.findIndex((m) => m.id === item.id);
+      return {
+        ...state,
+        messages:
+          index < 0
+            ? [...state.messages, item]
+            : state.messages.map((m) => (m.id === item.id ? item : m)),
       };
     }
     case "ai-reply": {

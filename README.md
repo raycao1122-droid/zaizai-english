@@ -1,8 +1,10 @@
-# 在在的英语课堂 · M2（0.2.0）
+# 在在的英语课堂 · M2 / M3 开发分支（0.2.0）
 
 云端固定项目目录：`/workspace/zaizai-english`。迁移到电脑后，以你打开的 `zaizai-english` 本地文件夹为固定项目目录，保留同一个 Git 仓库及全部历史。后续不要重建一套项目，也不要改动旁边的 ContentFlow 或其他项目。
 
-本阶段：React + TypeScript + Vite + Tailwind CSS 前端，使用本地模拟数据。没有 AI、语音、麦克风、摄像头、发音评分或后端调用。底部按用户确认采用**连续语音状态模拟**。
+公开网站仍为 M2 模拟课堂。本分支新增 M3 文字后端，以及可切换的实时语音配置和百炼 WebSocket 适配器；默认仍是模拟模式，用户主动配置、授权并连接后才申请麦克风。百炼真实语音尚待 Key/业务空间及设备实测，其他语音厂商未接入。
+
+本轮交付见 [REALTIME_VOICE_DELIVERY.md](REALTIME_VOICE_DELIVERY.md)，Key 填写、后端部署候选和操作步骤见 [AI_SERVICE_SETUP.md](AI_SERVICE_SETUP.md)。没有自动部署或购买服务。
 
 ## 运行
 

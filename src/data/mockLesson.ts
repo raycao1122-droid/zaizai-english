@@ -13,6 +13,7 @@ export type VoiceState =
   | "disconnected"
   | "idle";
 export type Message = {
+  source?: "voice";
   id: string;
   speaker: "Emma" | "在在";
   text: string;
