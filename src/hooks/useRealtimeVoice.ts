@@ -55,6 +55,7 @@ export function useRealtimeVoice({
   const [selected, setSelected] = useState<ProviderId>(initialModel);
   const [base] = useState(initialBackend);
   const [providers, setProviders] = useState(defaultProviders);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<
     "disconnected" | "connecting" | "connected" | "error"
   >("disconnected");
@@ -109,6 +110,8 @@ export function useRealtimeVoice({
     } catch {
       if (expected !== generation.current) return;
       setProviders(defaultProviders);
+    } finally {
+      if (expected === generation.current) setLoading(false);
     }
   }
   useEffect(() => {
@@ -307,7 +310,7 @@ export function useRealtimeVoice({
     setLiveSubtitle("");
   }
   async function connect() {
-    if (busy.current || locked) return;
+    if (busy.current || locked || loading) return;
     if (!selectedProvider.configured || !selectedProvider.implemented) {
       setStatus("error");
       setMessage("未配置：所选语音暂未开放，请选择其他模型。");
@@ -443,6 +446,7 @@ export function useRealtimeVoice({
     selected,
     select,
     providers,
+    loading,
     selectedProvider,
     base,
     status,

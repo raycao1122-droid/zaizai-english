@@ -167,10 +167,14 @@ export function ConversationPanel({
                 </>
               ) : (
                 <button
-                  disabled={voiceBlocked || realtime.locked}
+                  disabled={voiceBlocked || realtime.locked || realtime.loading}
                   onClick={() => void realtime.connect()}
                 >
-                  {realtime.status === "error" ? "重新连接" : "开始语音"}
+                  {realtime.loading
+                    ? "正在准备语音…"
+                    : realtime.status === "error"
+                      ? "重新连接"
+                      : "开始语音"}
                 </button>
               )}
             </div>

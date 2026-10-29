@@ -314,3 +314,24 @@ test("existing deployed relay without audio item IDs still attaches real audio t
   await expect(teacher.getByLabel("Emma语音回听")).toHaveCount(1);
   await page.getByRole("button", { name: "断开语音", exact: true }).click();
 });
+
+test("start stays disabled until a slow service catalog has actually loaded", async ({
+  page,
+}) => {
+  await page.route("**/api/voice/config", async (r) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await r.fulfill({
+      json: { providers: [{ id: "qwen", configured: true }] },
+    });
+  });
+  await page.route("**/api/voice/session", (r) =>
+    r.fulfill({ status: 401, json: { error: "当前设备尚未授权。" } }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "正在准备语音…", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "开始语音", exact: true }),
+  ).toBeEnabled();
+});
