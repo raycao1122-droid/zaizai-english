@@ -6,3 +6,5 @@ playwright-report/
 .env*
 !.env.example
 *.log
+demo/raw/
+demo/*.webm
