@@ -78,7 +78,7 @@ test("dialog padding keeps the dialog open and its close control remains availab
     .getByRole("navigation")
     .getByRole("button", { name: "课程", exact: true })
     .click();
-  const dialog = page.getByRole("dialog", { name: "课程", exact: true });
+  const dialog = page.getByRole("dialog", { name: "课程与教材", exact: true });
   const box = (await dialog.boundingBox())!;
   await page.mouse.click(box.x + 5, box.y + 25);
   await expect(dialog).toBeVisible();

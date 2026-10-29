@@ -266,7 +266,12 @@ test("M2 navigation opens libraries and dialogs restore focus", async ({
       .getByRole("navigation")
       .getByRole("button", { name, exact: true });
     await trigger.click();
-    await expect(page.getByRole("dialog", { name, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("dialog", {
+        name: name === "课程" ? "课程与教材" : name,
+        exact: true,
+      }),
+    ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(trigger).toBeFocused();

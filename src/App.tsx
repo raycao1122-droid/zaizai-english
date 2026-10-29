@@ -33,6 +33,8 @@ import { voiceCycle } from "./data/mockLesson";
 
 export default function App() {
   const { state, dispatch, context } = useClassroom();
+  const [libraryRecent, setLibraryRecent] = useState<string[]>([]);
+  const [librarySelection, setLibrarySelection] = useState<string | null>(null);
   const [modal, setModal] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const [reviewed, setReviewed] = useState<string[]>([]);
@@ -281,7 +283,13 @@ export default function App() {
       )}
       {modal && (
         <Modal
-          title={modal}
+          title={modal === "课程" ? "课程与教材" : modal}
+          className={modal === "课程" ? "curriculum-modal" : ""}
+          titleIcon={
+            modal === "课程" ? (
+              <BookOpen size={32} color="#327ef3" aria-hidden="true" />
+            ) : undefined
+          }
           wide={["课程", "单词本", "错题本"].includes(modal)}
           onClose={() => setModal(null)}
         >
@@ -376,6 +384,15 @@ export default function App() {
             </>
           ) : modal === "课程" ? (
             <CurriculumLibrary
+              recent={libraryRecent}
+              selected={librarySelection}
+              onSelect={setLibrarySelection}
+              onUse={(id) =>
+                setLibraryRecent((current) => [
+                  id,
+                  ...current.filter((item) => item !== id),
+                ])
+              }
               materials={materials}
               onAdd={(items) =>
                 setMaterials((current) => [...current, ...items])

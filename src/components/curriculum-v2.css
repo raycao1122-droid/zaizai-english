@@ -1,0 +1,582 @@
+/* Scoped to the course dialog; classroom and other dialogs retain their styles. */
+.modal.curriculum-modal {
+  width: min(1320px, calc(100vw - 48px));
+  max-height: 94dvh;
+  padding: 28px;
+}
+.curriculum-modal .modal-heading {
+  margin-bottom: 6px;
+}
+.curriculum-modal .modal-heading h2 {
+  font-size: 28px;
+  font-weight: 900;
+}
+.curriculum-modal .modal-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.curriculum-modal .modal-heading .icon-button {
+  width: 46px;
+  height: 46px;
+  border: 1px solid #e0ebff;
+}
+.curriculum-modal .modal-body {
+  padding: 4px;
+}
+.curriculum-modal .shelf-subtitle {
+  color: #7d98bd;
+  font-size: 14px;
+  margin: 0 0 22px 42px;
+}
+.curriculum-modal .shelf-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 25px;
+}
+.curriculum-modal .shelf-nav {
+  background: linear-gradient(#eff6ff, #f5f9ff);
+  border-radius: 18px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.curriculum-modal .shelf-nav button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  padding: 16px 14px;
+  border-radius: 12px;
+  background: transparent;
+  color: #5b7ca7;
+  font-size: 15px;
+  font-weight: 700;
+  min-height: 52px;
+}
+.curriculum-modal .shelf-nav button.active {
+  background: linear-gradient(120deg, #3886ff, #5ba2ff);
+  color: white;
+  box-shadow: 0 5px 14px #327ef322;
+}
+.curriculum-modal .shelf-nav p {
+  font-size: 10px;
+  color: #8fa6c4;
+  line-height: 1.8;
+  margin: 20px 12px;
+}
+.curriculum-modal .shelf-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.curriculum-modal .shelf-banner {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-height: 165px;
+  background: radial-gradient(at 80% 30%, #edfbff, #d8f3ff 60%, #ccecff);
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 0 22px 0 0;
+}
+.curriculum-modal .shelf-banner > img {
+  width: 160px;
+  height: 180px;
+  object-fit: cover;
+  object-position: 50% 20%;
+  border-radius: 0 70px 70px 0;
+  align-self: stretch;
+}
+.curriculum-modal .shelf-banner h3 {
+  color: #12316a;
+  font-size: 27px;
+  font-weight: 900;
+  margin: 8px 0;
+}
+.curriculum-modal .shelf-banner p {
+  font-size: 14px;
+  color: #557da8;
+  line-height: 1.7;
+}
+.curriculum-modal .shelf-banner small {
+  display: block;
+  font-size: 10px;
+  color: #6e8fac;
+  margin-top: 8px;
+}
+.curriculum-modal .shelf-banner div > span {
+  color: #6f9fc2;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+.curriculum-modal .shelf-banner-book {
+  color: #4f9ff5;
+  opacity: 0.5;
+  margin-left: auto;
+}
+.curriculum-modal .shelf-search {
+  margin: 0;
+}
+.curriculum-modal .shelf-search > span {
+  font-size: 10px;
+  color: #8ca0ba;
+}
+.curriculum-modal .shelf-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.curriculum-modal .shelf-section-title h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #183d76;
+}
+.curriculum-modal .shelf-section-title h3 svg {
+  color: #3886ff;
+}
+.curriculum-modal .shelf-section-title > button {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: #7696bd;
+  font-size: 12px;
+}
+.curriculum-modal .shelf-empty-recent {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+  background: #f6faff;
+  border: 1px dashed #d6e6fb;
+  border-radius: 14px;
+  color: #87a6ce;
+}
+.curriculum-modal .shelf-empty-recent strong {
+  font-size: 13px;
+  color: #5277a7;
+}
+.curriculum-modal .shelf-empty-recent p {
+  font-size: 11px;
+  margin-top: 5px;
+}
+.curriculum-modal .shelf-recent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.curriculum-modal .shelf-recent-grid article {
+  border: 1px solid #e2ecfc;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+}
+.curriculum-modal .shelf-recent-grid article > div:last-child {
+  min-width: 0;
+}
+.curriculum-modal .shelf-recent-grid h4 {
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.curriculum-modal .shelf-recent-grid small,
+.curriculum-modal .shelf-recent-grid p {
+  font-size: 9px;
+  color: #8ba1bb;
+  margin: 5px 0;
+}
+.curriculum-modal .shelf-recent-grid button {
+  display: flex;
+  align-items: center;
+  background: #edf5ff;
+  color: #327ef3;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.curriculum-modal .shelf-filters {
+  display: flex;
+  gap: 8px;
+}
+.curriculum-modal .shelf-filters select {
+  border: 1px solid #e0ebfb;
+  background: #f6faff;
+  border-radius: 20px;
+  padding: 7px 10px;
+  color: #7391b7;
+  font-size: 11px;
+  max-width: 140px;
+}
+.curriculum-modal .material-list.shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  max-height: none;
+  overflow: visible;
+}
+.curriculum-modal .shelf-card.material-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 13px;
+  position: relative;
+  border: 1px solid #e1eafb;
+  background: linear-gradient(135deg, #fff, #f9fcff);
+  border-radius: 16px;
+  box-shadow: 0 4px 13px #3979bd05;
+}
+.curriculum-modal .shelf-card.selected {
+  border: 2px solid #3886ff;
+  padding: 12px;
+  box-shadow: 0 4px 15px #327ef312;
+}
+.curriculum-modal .shelf-card-select {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: transparent;
+  text-align: left;
+  min-width: 0;
+  position: relative;
+}
+.curriculum-modal .shelf-card-select > div:last-of-type {
+  min-width: 0;
+}
+.curriculum-modal .shelf-card-select strong {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.curriculum-modal .shelf-cover {
+  width: 94px;
+  height: 128px;
+  flex-shrink: 0;
+  border-radius: 5px 10px 10px 5px;
+  background: linear-gradient(125deg, #9fdfc7, #f7f4bb);
+  border-left: 5px solid #7bc5ab;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px;
+  color: #2a6656;
+  box-shadow: 3px 4px 8px #26466e17;
+  overflow: hidden;
+}
+.curriculum-modal .shelf-cover-gold {
+  background: linear-gradient(140deg, #ffca67, #fff0c4);
+  border-color: #eab351;
+  color: #936222;
+}
+.curriculum-modal .shelf-cover-local {
+  background: linear-gradient(140deg, #bddaff, #edf5ff);
+  border-color: #8cb9f1;
+  color: #4b7bab;
+}
+.curriculum-modal .shelf-cover > strong {
+  font-size: 19px;
+  color: inherit;
+}
+.curriculum-modal .shelf-cover > small {
+  font-size: 7px;
+  color: inherit;
+  letter-spacing: 1px;
+}
+.curriculum-modal .shelf-cover > span {
+  font-size: 8px;
+  background: #ffffffa6;
+  padding: 2px 7px;
+  border-radius: 8px;
+}
+.curriculum-modal .shelf-cover img {
+  width: 65px;
+  height: 53px;
+  object-fit: contain;
+}
+.curriculum-modal .shelf-chip {
+  display: inline-block;
+  font-size: 10px;
+  color: #6092d2;
+  background: #edf5ff;
+  padding: 3px 8px;
+  border-radius: 5px;
+  margin-top: 9px;
+}
+.curriculum-modal .shelf-card-select small {
+  display: block;
+  font-size: 10px;
+  color: #94a7bd;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.curriculum-modal .shelf-selected-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: #3886ff;
+  color: white;
+  border-radius: 50%;
+  padding: 3px;
+}
+.curriculum-modal .shelf-card-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.curriculum-modal .shelf-card-actions > button {
+  color: #6e91b9;
+  background: transparent;
+  font-size: 11px;
+  min-height: 32px;
+  padding: 5px 8px;
+}
+.curriculum-modal .shelf-card-actions .soft-button {
+  margin: 0;
+  background: #f0f6ff;
+}
+.curriculum-modal .shelf-choose {
+  background: #edf5ff;
+  color: #327ef3;
+  border-radius: 10px;
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.curriculum-modal .shelf-choose.active {
+  background: linear-gradient(110deg, #327ef3, #509bff);
+  color: #fff;
+}
+.curriculum-modal .shelf-upload {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  border: 1px dashed #bfd4f1;
+  border-radius: 15px;
+  padding: 18px;
+  background: #fbfdff;
+}
+.curriculum-modal .shelf-upload > svg {
+  color: #73aaff;
+}
+.curriculum-modal .shelf-upload > div {
+  flex: 1;
+}
+.curriculum-modal .shelf-upload h3 {
+  font-weight: 800;
+  font-size: 15px;
+}
+.curriculum-modal .shelf-upload p {
+  font-size: 11px;
+  color: #8ba3c2;
+  margin-top: 5px;
+}
+.curriculum-modal .shelf-upload small {
+  font-size: 10px;
+  color: #7d96b7;
+}
+.curriculum-modal .shelf-upload .soft-button {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.curriculum-modal .shelf-detail {
+  margin: 0;
+}
+.curriculum-modal .shelf-detail-tabs {
+  display: flex;
+  gap: 8px;
+}
+.curriculum-modal .shelf-detail-tabs button {
+  padding: 7px 10px;
+  background: #e8f1ff;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.curriculum-modal .shelf-detail-tabs button[aria-pressed="true"] {
+  background: #327ef3;
+  color: #fff;
+}
+.curriculum-modal .library-actions {
+  margin-top: 0;
+}
+.curriculum-modal .empty-state {
+  grid-column: 1/-1;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover {
+  width: 57px;
+  height: 84px;
+  padding: 5px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover img {
+  width: 43px;
+  height: 33px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover strong {
+  font-size: 12px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover small {
+  font-size: 5px;
+}
+@media (min-width: 1400px) {
+  .curriculum-modal .material-list.shelf-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .modal.curriculum-modal {
+    padding: 20px;
+    width: calc(100vw - 28px);
+  }
+  .curriculum-modal .shelf-layout {
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 17px;
+  }
+  .curriculum-modal .shelf-nav button {
+    font-size: 13px;
+    padding: 13px 10px;
+    gap: 8px;
+  }
+  .curriculum-modal .shelf-banner h3 {
+    font-size: 22px;
+  }
+  .curriculum-modal .shelf-banner > img {
+    width: 120px;
+  }
+  .curriculum-modal .shelf-banner-book {
+    display: none;
+  }
+  .curriculum-modal .shelf-recent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .curriculum-modal .shelf-cover {
+    width: 70px;
+    height: 108px;
+  }
+  .curriculum-modal .shelf-card-select {
+    gap: 10px;
+  }
+  .curriculum-modal .shelf-card-select strong {
+    font-size: 13px;
+  }
+}
+@media (max-width: 680px) {
+  .modal.curriculum-modal {
+    padding: 15px;
+    width: calc(100vw - 16px);
+    max-height: 94dvh;
+  }
+  .curriculum-modal .modal-heading h2 {
+    font-size: 23px;
+  }
+  .curriculum-modal .shelf-subtitle {
+    margin: 0 0 14px;
+    font-size: 11px;
+  }
+  .curriculum-modal .shelf-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .curriculum-modal .shelf-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 5px;
+  }
+  .curriculum-modal .shelf-nav button {
+    font-size: 11px;
+    min-height: 44px;
+    padding: 8px 5px;
+    gap: 4px;
+    justify-content: center;
+  }
+  .curriculum-modal .shelf-nav button svg {
+    width: 16px;
+  }
+  .curriculum-modal .shelf-nav p {
+    display: none;
+  }
+  .curriculum-modal .shelf-banner {
+    gap: 10px;
+    min-height: 145px;
+    padding-right: 10px;
+  }
+  .curriculum-modal .shelf-banner > img {
+    width: 87px;
+    height: 155px;
+  }
+  .curriculum-modal .shelf-banner h3 {
+    font-size: 19px;
+  }
+  .curriculum-modal .shelf-banner p {
+    font-size: 11px;
+  }
+  .curriculum-modal .shelf-banner small {
+    font-size: 9px;
+  }
+  .curriculum-modal .shelf-search > span {
+    display: none;
+  }
+  .curriculum-modal .shelf-section-title {
+    flex-wrap: wrap;
+  }
+  .curriculum-modal .shelf-section-title h3 {
+    font-size: 16px;
+  }
+  .curriculum-modal .shelf-filters select {
+    min-height: 44px;
+    font-size: 11px;
+    max-width: 145px;
+  }
+  .curriculum-modal .material-list.shelf-grid {
+    grid-template-columns: 1fr;
+  }
+  .curriculum-modal .shelf-recent-grid {
+    grid-template-columns: 1fr;
+  }
+  .curriculum-modal .shelf-upload {
+    flex-wrap: wrap;
+    padding: 13px;
+    gap: 10px;
+  }
+  .curriculum-modal .shelf-upload .soft-button {
+    margin-left: auto;
+    min-height: 44px;
+  }
+  .curriculum-modal .shelf-card-actions > button,
+  .curriculum-modal .shelf-choose {
+    min-height: 44px;
+  }
+  .curriculum-modal .library-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.curriculum-modal .shelf-card.material-row {
+  flex-wrap: nowrap;
+}
+.curriculum-modal .shelf-card > .shelf-card-actions {
+  flex: 0 0 auto;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.curriculum-modal .shelf-card-select {
+  width: 100%;
+}
+@media (min-width: 1400px) {
+  .curriculum-modal .material-list.shelf-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
