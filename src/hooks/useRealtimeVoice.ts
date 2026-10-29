@@ -13,6 +13,7 @@ import {
   DoubaoRealtimeAdapter,
   OpenAIRealtimeAdapter,
 } from "../voice/adapters";
+type LocalClip = { url: string; duration: number; bytes: number };
 const MODEL_KEY = "zaizai.voice.provider.v1";
 
 function stored(key: string) {
@@ -63,6 +64,15 @@ export function useRealtimeVoice({
   const [message, setMessage] = useState("未连接 · 语音不会自动启动");
   const [muted, setMuted] = useState(false);
   const [liveSubtitle, setLiveSubtitle] = useState("");
+  const [inputLevel, setInputLevel] = useState(0);
+  const [hasRecording, setHasRecording] = useState(false);
+  const [soundPaused, setSoundPaused] = useState(false);
+  const [replaying, setReplaying] = useState(false);
+  const [clips, setClips] = useState<Record<string, LocalClip>>({});
+  const [preview, setPreview] = useState<LocalClip | null>(null);
+  const clipStore = useRef(new Map<string, LocalClip>());
+  const previewRef = useRef<LocalClip | null>(null);
+  const replayElement = useRef<HTMLAudioElement | null>(null);
   const token = useRef("");
   const expiresAt = useRef(0);
   const bootstrap = useRef<Promise<unknown> | null>(null);
@@ -112,6 +122,10 @@ export function useRealtimeVoice({
       session.current++;
 
       adapter.current?.disconnect();
+      replayElement.current?.pause();
+      for (const clip of clipStore.current.values())
+        URL.revokeObjectURL(clip.url);
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
     },
     [],
   );
@@ -176,14 +190,119 @@ export function useRealtimeVoice({
       active = false;
     };
   }, [base]);
+  function saveClip(id: string, blob: Blob, duration: number) {
+    const old = clipStore.current.get(id);
+    if (old) URL.revokeObjectURL(old.url);
+    clipStore.current.delete(id);
+    clipStore.current.set(id, {
+      url: URL.createObjectURL(blob),
+      duration,
+      bytes: blob.size,
+    });
+    while (
+      clipStore.current.size > 20 ||
+      [...clipStore.current.values()].reduce((n, c) => n + c.bytes, 0) >
+        12 * 1024 * 1024
+    ) {
+      const first = clipStore.current.keys().next().value!;
+      URL.revokeObjectURL(clipStore.current.get(first)!.url);
+      clipStore.current.delete(first);
+    }
+    setClips(Object.fromEntries(clipStore.current));
+  }
+  function clearRecordings() {
+    replayElement.current?.pause();
+    replayElement.current = null;
+    setReplaying(false);
+    for (const clip of clipStore.current.values())
+      URL.revokeObjectURL(clip.url);
+    clipStore.current.clear();
+    setClips({});
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+    previewRef.current = null;
+    setPreview(null);
+    setHasRecording(false);
+    setInputLevel(0);
+  }
+  function previewRecording() {
+    const clip = adapter.current?.recentRecording?.();
+    if (!clip || clip.duration < 0.1) {
+      setMessage("还没有可回听的录音，请先说一句话。");
+      return;
+    }
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+    const value = {
+      url: URL.createObjectURL(clip.blob),
+      duration: clip.duration,
+      bytes: clip.blob.size,
+    };
+    previewRef.current = value;
+    setPreview(value);
+  }
+  function startReplay(element: HTMLAudioElement) {
+    const previous = replayElement.current;
+    replayElement.current = element;
+    if (previous && previous !== element) previous.pause();
+    setReplaying(true);
+    setPhase("idle");
+    adapter.current?.setMuted(true);
+    setInputLevel(0);
+    if (adapter.current) setMessage("正在回听 · 麦克风暂停收音");
+  }
+  function finishReplay(element: HTMLAudioElement) {
+    if (replayElement.current !== element) return;
+    replayElement.current = null;
+    setReplaying(false);
+    adapter.current?.setMuted(muted);
+    if (adapter.current) setPhase(muted ? "idle" : "listening");
+    if (adapter.current)
+      setMessage(
+        muted ? "已静音 · 不发送麦克风音频" : "已连接 · Emma 正在聆听",
+      );
+  }
+  function playLatestEmma() {
+    const clip = [...clipStore.current.entries()]
+      .reverse()
+      .find(([id]) => id.includes("-Emma-"))?.[1];
+    if (!clip) {
+      setMessage("请先开始语音，Emma 回复后即可回放。");
+      return;
+    }
+    const element = new Audio(clip.url);
+    element.onplay = () => startReplay(element);
+    element.onpause = () => finishReplay(element);
+    element.onended = () => finishReplay(element);
+    element.onerror = () => {
+      finishReplay(element);
+      playbackError();
+    };
+    void element.play().catch(playbackError);
+  }
+  function playbackError() {
+    setMessage("这段录音暂时无法播放，请重新录一段再试。");
+  }
+  async function resumeAudio() {
+    try {
+      await adapter.current?.resumeAudio?.();
+      setSoundPaused(false);
+    } catch {
+      setMessage("声音暂时无法恢复，请重新连接。");
+    }
+  }
   function disconnect(reason = "已断开 · 麦克风已释放") {
-    session.current++;
     adapter.current?.disconnect();
+    session.current++;
     adapter.current = null;
+    replayElement.current?.pause();
+    replayElement.current = null;
+    setReplaying(false);
     busy.current = false;
     setStatus("disconnected");
     setPhase("idle");
     setMuted(false);
+    setInputLevel(0);
+    setHasRecording(false);
+    setSoundPaused(false);
     setMessage(reason);
     setLiveSubtitle("");
   }
@@ -197,6 +316,12 @@ export function useRealtimeVoice({
     busy.current = true;
     const id = ++session.current;
     transcript.current.clear();
+    replayElement.current?.pause();
+    replayElement.current = null;
+    setReplaying(false);
+    setInputLevel(0);
+    setHasRecording(false);
+    setSoundPaused(false);
     setLiveSubtitle("");
     setMuted(false);
     setStatus("connecting");
@@ -211,6 +336,34 @@ export function useRealtimeVoice({
     adapter.current = service;
     function onEvent(e: VoiceEvent) {
       if (session.current !== id) return;
+      if (e.type === "input-level") {
+        setInputLevel(e.level || 0);
+        setHasRecording(true);
+      }
+      if (e.type === "audio-paused") {
+        setSoundPaused(true);
+        setMessage("声音已暂停，请点击恢复声音。");
+      }
+      if (e.type === "audio-resumed") {
+        setSoundPaused(false);
+        setMessage((previous) =>
+          previous.includes("声音已暂停") ? "已连接 · Emma 正在聆听" : previous,
+        );
+      }
+      if (e.type === "clip" && e.clip && e.speaker) {
+        const key = `${e.speaker}-${e.id || "current"}`,
+          messageId = `voice-${id}-${key}`;
+        saveClip(messageId, e.clip, e.duration || 0);
+        if (!transcript.current.has(key))
+          current.current.onTranscript({
+            id: messageId,
+            speaker: e.speaker,
+            text:
+              e.speaker === "在在"
+                ? "我的录音（暂无识别文字）"
+                : "Emma 的语音回复（暂无字幕）",
+          });
+      }
       if (e.type === "error") {
         service.disconnect();
         adapter.current = null;
@@ -279,7 +432,7 @@ export function useRealtimeVoice({
   function toggleMute() {
     if (status !== "connected") return;
     const next = !muted;
-    adapter.current?.setMuted(next);
+    adapter.current?.setMuted(next || replaying);
     setMuted(next);
     setPhase(next ? "idle" : "listening");
     setMessage(
@@ -298,6 +451,19 @@ export function useRealtimeVoice({
     locked,
     muted,
     liveSubtitle,
+    inputLevel,
+    hasRecording,
+    soundPaused,
+    replaying,
+    clips,
+    preview,
+    previewRecording,
+    startReplay,
+    finishReplay,
+    playbackError,
+    playLatestEmma,
+    resumeAudio,
+    clearRecordings,
     refresh,
     connect,
     disconnect,

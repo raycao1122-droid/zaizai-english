@@ -183,6 +183,7 @@ export default function App() {
   }
   function reset() {
     realtime.disconnect("课堂已重置，真实语音已断开。");
+    realtime.clearRecordings();
     aiRequest.current?.abort();
     setAiBusy(false);
     dispatch({ type: "reset" });
@@ -260,7 +261,7 @@ export default function App() {
                     });
                 }
               }}
-              onAudio={audio}
+              onAudio={realtime.playLatestEmma}
             />
             <LessonStage
               index={state.step}
@@ -293,6 +294,7 @@ export default function App() {
               ) : (
                 <ClassroomActivities
                   state={state}
+                  voiceConnected={realtime.status === "connected"}
                   onSelect={(animal) => {
                     dispatch({ type: "select", animal });
                     if (context.step.id !== "vocabulary")

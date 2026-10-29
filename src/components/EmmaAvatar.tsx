@@ -39,7 +39,7 @@ export function EmmaAvatar({
           </p>
           <button
             className="audio-button"
-            aria-label="模拟播放 Emma 问候"
+            aria-label="回放 Emma 最近语音"
             onClick={onAudio}
           >
             <Volume2 size={22} />

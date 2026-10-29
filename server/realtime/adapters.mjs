@@ -137,10 +137,10 @@ export class QwenRealtimeAdapter extends EventEmitter {
           if (this.responding && !this.autoInterrupt) this.cancelResponse();
           this.responding = false;
           this.outputAllowed = false;
-          this.emit("event", { type: "interrupted" });
+          this.emit("event", { type: "interrupted", id: e.item_id });
         }
         if (e.type === "input_audio_buffer.speech_stopped")
-          this.emit("event", { type: "thinking" });
+          this.emit("event", { type: "thinking", id: e.item_id });
         if (e.type === "response.done") {
           this.responding = false;
           this.emit("event", { type: "turn-ended" });
@@ -150,7 +150,9 @@ export class QwenRealtimeAdapter extends EventEmitter {
           this.outputAllowed &&
           typeof e.delta === "string"
         )
-          this.emit("event", { type: "audio", audio: e.delta });
+          this.emit("event", { type: "audio", audio: e.delta, id: e.item_id });
+        if (e.type === "response.audio.done")
+          this.emit("event", { type: "audio-complete", id: e.item_id });
         if (e.type === "conversation.item.input_audio_transcription.delta")
           this.emit("event", {
             type: "subtitle",
@@ -184,6 +186,9 @@ export class QwenRealtimeAdapter extends EventEmitter {
           });
       });
     });
+  }
+  startGreeting() {
+    if (this.ready) this.send({ type: "response.create" });
   }
   cancelResponse() {
     this.cancelId = "cancel-" + Date.now();

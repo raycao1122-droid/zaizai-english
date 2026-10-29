@@ -1,3 +1,4 @@
+import { decodePcm, pcmLevel, pcmClip } from "./audio";
 import {
   api,
   ClassroomApiError,
@@ -24,6 +25,17 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   private onEvent?: (event: VoiceEvent) => void;
   private acceptingAudio = true;
   private sending = false;
+  private inputRing: Uint8Array[] = [];
+  private inputSegment: {
+    id: string;
+    chunks: Uint8Array[];
+    bytes: number;
+  } | null = null;
+  private outputSegments = new Map<
+    string,
+    { chunks: Uint8Array[]; bytes: number }
+  >();
+  private meterAt = 0;
   async connect(options: ConnectOptions) {
     this.onEvent = options.onEvent;
     if (
@@ -36,9 +48,18 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       );
     try {
       // Resume synchronously within the user's button gesture, before awaiting network/permission.
-      this.audio = new AudioContext({ sampleRate: 16000 });
+      this.audio = new AudioContext();
       await this.audio.resume();
       if (this.closed) return;
+      this.audio.onstatechange = () => {
+        if (!this.closed && this.sending)
+          this.onEvent?.({
+            type:
+              this.audio?.state === "running"
+                ? "audio-resumed"
+                : "audio-paused",
+          });
+      };
       const accessToken = options.authorize
         ? await options.authorize()
         : options.token;
@@ -65,6 +86,8 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       );
       if (this.closed) return;
       this.capture = new AudioWorkletNode(this.audio!, "pcm-capture");
+      this.capture.onprocessorerror = () =>
+        this.fail("麦克风处理已停止，请重新连接。");
       this.capture.port.onmessage = ({ data }: MessageEvent<ArrayBuffer>) => {
         if (
           this.closed ||
@@ -75,6 +98,20 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
           return;
         if (this.ws!.bufferedAmount > 128000)
           return this.fail("音频网络拥塞，已停止录音，请重新连接。");
+        const bytes = new Uint8Array(data);
+        this.inputRing.push(bytes);
+        if (this.inputRing.length > 250) this.inputRing.shift();
+        if (
+          this.inputSegment &&
+          this.inputSegment.bytes + bytes.length <= 960000
+        ) {
+          this.inputSegment.chunks.push(bytes);
+          this.inputSegment.bytes += bytes.length;
+        }
+        if (performance.now() - this.meterAt > 200) {
+          this.meterAt = performance.now();
+          this.onEvent?.({ type: "input-level", level: pcmLevel(bytes) });
+        }
         let binary = "";
         for (const b of new Uint8Array(data)) binary += String.fromCharCode(b);
         this.send({ type: "audio", audio: btoa(binary) });
@@ -136,20 +173,52 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
             clearTimeout(this.timer);
             this.rejectPending = undefined;
             this.sending = true;
+            if (this.audio?.state !== "running")
+              this.onEvent?.({ type: "audio-paused" });
             resolve();
           }
           if (e.type === "interrupted") {
+            this.finishInput();
+            this.finishOutput();
+            const chunks = this.inputRing.slice(-50);
+            this.inputSegment = {
+              id: e.id || "current",
+              chunks: [...chunks],
+              bytes: chunks.reduce((n, b) => n + b.length, 0),
+            };
             this.stopPlayback();
             this.acceptingAudio = false;
           }
+          if (e.type === "thinking") this.finishInput(e.id);
+          if (e.type === "audio-complete" || e.type === "turn-ended")
+            this.finishOutput(e.id);
+          if (e.type === "subtitle" && e.speaker === "在在" && e.final)
+            this.finishInput(e.id);
           if (e.type === "response-started") this.acceptingAudio = true;
           if (
             e.type === "audio" &&
             e.audio &&
             !this.muted &&
             this.acceptingAudio
-          )
-            this.play(e.audio);
+          ) {
+            try {
+              const bytes = decodePcm(e.audio),
+                id = e.id || "current";
+              const segment = this.outputSegments.get(id) || {
+                chunks: [],
+                bytes: 0,
+              };
+              if (segment.bytes + bytes.length <= 2400000) {
+                segment.chunks.push(bytes);
+                segment.bytes += bytes.length;
+                this.outputSegments.set(id, segment);
+              }
+              this.play(e.audio);
+            } catch {
+              this.fail("语音音频格式无效。");
+              return;
+            }
+          }
           this.onEvent?.(e);
         };
         ws.onerror = () => this.fail("语音网络连接失败，请稍后重试。");
@@ -170,6 +239,46 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       throw e;
     }
   }
+  private finishInput(id?: string) {
+    const segment = this.inputSegment;
+    if (!segment || (id && id !== segment.id)) return;
+    this.inputSegment = null;
+    if (segment.bytes) {
+      const clip = pcmClip(segment.chunks, 16000);
+      this.onEvent?.({
+        type: "clip",
+        speaker: "在在",
+        id: segment.id,
+        clip: clip.blob,
+        duration: clip.duration,
+      });
+    }
+  }
+  private finishOutput(id?: string) {
+    for (const [key, segment] of [...this.outputSegments]) {
+      if (id && key !== id) continue;
+      this.outputSegments.delete(key);
+      if (segment.bytes) {
+        const clip = pcmClip(segment.chunks, 24000);
+        this.onEvent?.({
+          type: "clip",
+          speaker: "Emma",
+          id: key,
+          clip: clip.blob,
+          duration: clip.duration,
+        });
+      }
+    }
+  }
+  recentRecording() {
+    return this.inputRing.length ? pcmClip(this.inputRing, 16000) : null;
+  }
+  async resumeAudio() {
+    if (this.audio && this.audio.state !== "closed") {
+      await this.audio.resume();
+      this.onEvent?.({ type: "audio-resumed" });
+    }
+  }
   private fail(message: string) {
     if (this.closed) return;
     const reject = this.rejectPending;
@@ -184,8 +293,10 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   }
   private play(base64: string) {
     const audio = this.audio;
-    if (!audio || audio.state !== "running")
-      return this.fail("音频播放已暂停，请重新连接以恢复声音。");
+    if (!audio || audio.state !== "running") {
+      this.onEvent?.({ type: "audio-paused" });
+      return;
+    }
     try {
       const raw = atob(base64);
       if (!raw.length || raw.length % 2 || raw.length > 480000)
@@ -232,7 +343,11 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
     this.stream?.getAudioTracks().forEach((t) => {
       t.enabled = !muted;
     });
-    if (muted) this.stopPlayback();
+    if (muted) {
+      this.finishInput();
+      this.finishOutput();
+      this.stopPlayback();
+    }
     this.send({ type: "mute", muted });
   }
   updateContext(context: VoiceContext) {
@@ -240,6 +355,8 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   }
   disconnect() {
     if (this.closed) return;
+    this.finishInput();
+    this.finishOutput();
     this.closed = true;
     this.sending = false;
     clearTimeout(this.timer);
@@ -254,6 +371,8 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       t.stop();
     });
     this.stopPlayback();
+    this.inputRing = [];
+    this.outputSegments.clear();
     if (this.audio && this.audio.state !== "closed") void this.audio.close();
     if (this.ws) {
       this.ws.onclose = null;

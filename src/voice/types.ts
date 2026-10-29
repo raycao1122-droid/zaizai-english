@@ -46,6 +46,9 @@ export type VoiceEvent = {
   text?: string;
   final?: boolean;
   audio?: string;
+  clip?: Blob;
+  duration?: number;
+  level?: number;
 };
 export type ConnectOptions = {
   base: string;
@@ -59,6 +62,8 @@ export interface RealtimeVoiceService {
   disconnect(): void;
   setMuted(muted: boolean): void;
   updateContext(context: VoiceContext): void;
+  recentRecording?(): { blob: Blob; duration: number } | null;
+  resumeAudio?(): Promise<void>;
 }
 export function validateBackend(value: string) {
   if (!value.trim()) return "";

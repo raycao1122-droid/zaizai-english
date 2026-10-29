@@ -35,6 +35,9 @@ class FixtureAdapter extends EventEmitter {
   updateContext(context) {
     this.context = context;
   }
+  startGreeting() {
+    this.greeted = true;
+  }
   mute() {
     this.muted = true;
   }
@@ -178,6 +181,7 @@ test("single-use websocket ticket, real local relay, mute, context isolation and
       await once(ws, "open");
       assert.equal(JSON.parse((await ready)[0]).type, "ready");
       assert.equal(a.context.stage, "listening");
+      assert(a.greeted, "a ready voice connection starts a real greeting");
       assert.equal(a.context.tool, undefined);
       const subtitle = once(ws, "message");
       ws.send(JSON.stringify({ type: "audio", audio: "AAAA" }));
@@ -268,6 +272,7 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
   adapter.on("event", (e) => events.push(e));
   try {
     await adapter.connect(safeContext({ prompt: "Look at the dog" }));
+    adapter.startGreeting();
     assert.match(
       requested.url,
       new RegExp(
@@ -284,7 +289,11 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
     assert.match(received[0].session.instructions, /cannot select materials/);
     remote.send(JSON.stringify({ type: "response.created" }));
     remote.send(
-      JSON.stringify({ type: "response.audio.delta", delta: "AAAA" }),
+      JSON.stringify({
+        type: "response.audio.delta",
+        delta: "AAAA",
+        item_id: "x",
+      }),
     );
     remote.send(
       JSON.stringify({
@@ -293,9 +302,17 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
         transcript: "A dog.",
       }),
     );
-    remote.send(JSON.stringify({ type: "input_audio_buffer.speech_started" }));
+    remote.send(JSON.stringify({ type: "response.audio.done", item_id: "x" }));
+    remote.send(
+      JSON.stringify({
+        type: "input_audio_buffer.speech_started",
+        item_id: "student-x",
+      }),
+    );
     await new Promise((r) => setTimeout(r, 25));
-    assert(events.some((e) => e.type === "audio"));
+    assert(events.some((e) => e.type === "audio" && e.id === "x"));
+    assert(events.some((e) => e.type === "audio-complete" && e.id === "x"));
+    assert(received.some((e) => e.type === "response.create"));
     assert(events.some((e) => e.type === "interrupted"));
     assert(events.some((e) => e.text === "A dog."));
     assert(received.some((e) => e.type === "response.cancel"));

@@ -22,6 +22,7 @@ import { PronunciationFeedback } from "./PronunciationFeedback";
 
 type Props = {
   state: ClassroomState;
+  voiceConnected?: boolean;
   onSelect: (animal: AnimalId) => void;
   onAnswer: (answer: string) => void;
   onAudio: () => void;
@@ -190,7 +191,9 @@ export function ClassroomActivities(props: Props) {
           <ArrowRight size={20} />
         </button>
         <p className="stage-footnote">
-          课堂与语音均为模拟状态，未接入 AI 或设备。
+          {props.voiceConnected
+            ? "示例课件 · 实时语音已连接，可以直接和 Emma 说话。"
+            : "示例课件 · 点击「开始语音」后可与 Emma 交流。"}
         </p>
       </div>
     );

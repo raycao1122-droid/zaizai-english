@@ -180,6 +180,56 @@ export function ConversationPanel({
             >
               {realtime.message}
             </p>
+            {realtime.status === "connected" && (
+              <div className="voice-recording-tools">
+                <button
+                  className="soft-button"
+                  disabled={!realtime.hasRecording}
+                  onClick={realtime.previewRecording}
+                >
+                  回听我的录音
+                </button>
+                {realtime.soundPaused && (
+                  <button
+                    className="soft-button"
+                    onClick={() => void realtime.resumeAudio()}
+                  >
+                    恢复声音
+                  </button>
+                )}
+                {!realtime.muted && !realtime.replaying && (
+                  <label className="microphone-level">
+                    {realtime.inputLevel > 0.008
+                      ? "正在收音"
+                      : "请对着麦克风说话"}
+                    <meter
+                      aria-label="麦克风音量"
+                      min={0}
+                      max={0.1}
+                      value={Math.min(0.1, realtime.inputLevel)}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+            {realtime.preview && (
+              <div className="voice-recording-preview">
+                <span>
+                  我的最近录音 · {realtime.preview.duration.toFixed(1)} 秒
+                </span>
+                <audio
+                  controls
+                  preload="metadata"
+                  aria-label="最近录音回听"
+                  src={realtime.preview.url}
+                  onPlay={(e) => realtime.startReplay(e.currentTarget)}
+                  onPause={(e) => realtime.finishReplay(e.currentTarget)}
+                  onEnded={(e) => realtime.finishReplay(e.currentTarget)}
+                  onError={realtime.playbackError}
+                />
+                <small>仅保留在本次页面，刷新或重置后清除。</small>
+              </div>
+            )}
             {realtime.liveSubtitle && (
               <p className="voice-live-caption">{realtime.liveSubtitle}</p>
             )}
@@ -204,16 +254,42 @@ export function ConversationPanel({
                       {message.source === "voice" && (
                         <small className="voice-source-label">实时字幕</small>
                       )}
-                      <button
-                        className="small-audio"
-                        aria-label={`模拟播放${message.speaker}对话`}
-                        onClick={onAudio}
-                      >
-                        <Volume2 size={16} />
-                      </button>
+                      {message.source !== "voice" && (
+                        <small className="example-message-label">
+                          示例文字
+                        </small>
+                      )}
                     </div>
                     <div className="message-bubble">
                       <p>{message.text}</p>
+                      {realtime.clips[message.id] && (
+                        <div className="message-voice-clip">
+                          <span>
+                            {message.speaker === "在在"
+                              ? "回听我的录音"
+                              : "播放 Emma 语音"}{" "}
+                            · {realtime.clips[message.id].duration.toFixed(1)}{" "}
+                            秒
+                          </span>
+                          <audio
+                            controls
+                            preload="metadata"
+                            aria-label={`${message.speaker}语音回听`}
+                            src={realtime.clips[message.id].url}
+                            onPlay={(e) =>
+                              realtime.startReplay(e.currentTarget)
+                            }
+                            onPause={(e) =>
+                              realtime.finishReplay(e.currentTarget)
+                            }
+                            onEnded={(e) =>
+                              realtime.finishReplay(e.currentTarget)
+                            }
+                            onError={realtime.playbackError}
+                          />
+                        </div>
+                      )}
+
                       {translate && message.translation && (
                         <p className="translation">{message.translation}</p>
                       )}
@@ -298,9 +374,11 @@ export function ConversationPanel({
           placeholder={
             waiting
               ? "Emma 正在思考…"
-              : disabled
-                ? "已暂停，继续课堂后发送"
-                : "输入英文，练习回答…"
+              : realtime.locked
+                ? "语音会话中，请直接说话"
+                : disabled
+                  ? "已暂停，继续课堂后发送"
+                  : "输入英文，练习回答…"
           }
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
