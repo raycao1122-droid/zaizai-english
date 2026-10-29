@@ -17,8 +17,9 @@ if [[ ! -f zaizai-english-history.bundle ]]; then
   exit 1
 fi
 
-git bundle verify zaizai-english-history.bundle
+git bundle list-heads zaizai-english-history.bundle
 git clone ./zaizai-english-history.bundle zaizai-english
+git -C zaizai-english bundle verify ../zaizai-english-history.bundle
 git -C zaizai-english remote remove origin
 echo '现有项目与全部 Git 历史已还原，没有重新初始化项目。'
 cd zaizai-english
