@@ -36,16 +36,10 @@ try {
       });
     }
     await page
-      .getByRole("button", { name: "AI 服务配置", exact: true })
+      .getByRole("button", { name: "在在的课堂设置", exact: true })
       .click();
     await page.screenshot({
       path: `screenshots/realtime-config/settings-${width}.png`,
-    });
-    await page
-      .getByRole("button", { name: "连接真实语音", exact: true })
-      .scrollIntoViewIfNeeded();
-    await page.screenshot({
-      path: `screenshots/realtime-config/settings-controls-${width}.png`,
     });
     console.log(`Captured ${width}x${height}; no microphone or provider call.`);
     await page.close();

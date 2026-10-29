@@ -29,7 +29,6 @@ import {
   type CurriculumMaterial,
   type MockSession,
 } from "./data/mockReports";
-import { AiServiceConfig } from "./components/AiServiceConfig";
 import { useRealtimeVoice } from "./hooks/useRealtimeVoice";
 import { voiceCycle } from "./data/mockLesson";
 
@@ -153,13 +152,13 @@ export default function App() {
       });
       const health = await response.json();
       if (!response.ok || !health.configured)
-        throw new Error("AI 服务尚未配置。请先启动并配置课堂后端。");
+        throw new Error("文字练习暂不可用，请稍后再试。");
       setAiEnabled(true);
       setAiStatus("已开启 AI 文字对话；语音仍为演示。");
       setToast("已启用真实 AI 文字对话；课件按钮、语音和报告仍为模拟。");
     } catch {
-      setAiStatus("AI 服务未就绪，请先配置并启动课堂后端。");
-      setToast("AI 服务未就绪，当前仍为 M2 演示。需先配置并启动课堂后端。");
+      setAiStatus("AI 服务未就绪，请稍后再试。");
+      setToast("AI 服务未就绪，当前保留示例文字练习。");
     }
   }
   function audio() {
@@ -321,7 +320,6 @@ export default function App() {
               disabled={state.paused || aiBusy || voiceActive}
               realtime={realtime}
               voiceBlocked={state.paused || aiBusy}
-              onServiceConfig={() => setModal("AI 服务配置")}
               isAi={aiEnabled}
               waiting={aiBusy}
               tab={state.panelTab}
@@ -479,19 +477,8 @@ export default function App() {
             </>
           ) : modal === "课堂设置" ? (
             <>
-              <button
-                className="soft-button ai-config-entry"
-                onClick={() => setModal("AI 服务配置")}
-              >
-                <Settings2 size={18} /> AI 服务配置{" "}
-                <span>
-                  {realtime.selectedProvider.name} ·{" "}
-                  {realtime.selectedProvider.configured ? "待验证" : "未配置"}
-                </span>
-              </button>
               <p className="muted-copy">
-                默认仍为演示；真实语音需在 AI
-                服务配置中主动连接，届时会请求麦克风权限。
+                点击课堂对话中的「开始语音」，允许麦克风后即可与 Emma 交流。
               </p>
               <label className="setting-row">
                 <span>真实 AI 文字对话（M3）</span>
@@ -508,9 +495,7 @@ export default function App() {
                 </p>
               )}
               <p className="muted-copy">
-                开启后，仅输入框对话使用 AI（现有 OpenAI
-                文字通道）；需启动课堂后端。课件按钮、评分与报告仍为演示，真实语音通过
-                AI 服务配置单独连接。
+                开启后可使用文字与 Emma 练习；课件按钮、评分与报告仍为演示。
               </p>
               <label className="setting-row">
                 <span>显示中文翻译</span>
@@ -527,23 +512,18 @@ export default function App() {
               </label>
               <div className="setting-row">
                 <span>语音交互</span>
-                <strong>连续语音 · 状态模拟</strong>
+                <strong>
+                  {voiceActive ? "实时语音会话中" : "连续语音 · 点击开始语音"}
+                </strong>
               </div>
               <div className="setting-row">
                 <span>Emma 展示</span>
                 <span>原图静态裁切 + CSS 微动</span>
               </div>
               <p className="notice-copy">
-                M2
-                的纠音、报告和档案为模拟内容；真实文字对话按上方开关配置；实时语音请通过
-                AI 服务配置单独连接；摄像头与学习数据服务尚未接入。
+                纠音、报告和档案仍为模拟内容。真实语音请点击「开始语音」；摄像头和学习档案同步尚未开放。
               </p>
             </>
-          ) : modal === "AI 服务配置" ? (
-            <AiServiceConfig
-              voice={realtime}
-              blocked={state.paused || state.exited || aiBusy}
-            />
           ) : modal === "课程目录" ? (
             <>
               <p className="muted-copy">

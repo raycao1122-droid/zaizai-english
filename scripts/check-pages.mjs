@@ -64,7 +64,13 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("response", (response) => {
     // A standalone Pages deployment has no API; verify its explicit unavailable UI.
-    if (response.status() === 404 && new URL(response.url()).pathname === "/api/voice/config") { unavailableVoiceBackend++; return; }
+    if (
+      response.status() === 404 &&
+      ["/api/voice/config", "/api/voice/session"].includes(new URL(response.url()).pathname)
+    ) {
+      unavailableVoiceBackend++;
+      return;
+    }
     if (response.status() >= 400)
       badResponses.push(`${response.status()} ${response.url()}`);
   });
@@ -94,9 +100,12 @@ try {
   }
   await validateImages();
   await page.getByRole("combobox", { name: "实时语音模型" }).waitFor();
-  await page.getByRole("button", { name: "AI 服务配置", exact: true }).click();
-  await page.getByText("语音后端尚未连接。GitHub Pages 只提供网页，请先配置 HTTPS 后端地址。").waitFor();
-  assert(unavailableVoiceBackend > 0, "Static-only deployment should report the missing backend");
+  assert(
+    unavailableVoiceBackend > 0,
+    "Static-only deployment should report the missing backend",
+  );
+  await page.getByRole("button", { name: "在在的课堂设置" }).click();
+  assert(!(await page.getByRole("dialog").innerText()).includes("DASHSCOPE"));
   await page.getByRole("button", { name: "关闭弹窗", exact: true }).click();
   await stage(3);
   await page.getByRole("button", { name: "选择 dog", exact: true }).click();

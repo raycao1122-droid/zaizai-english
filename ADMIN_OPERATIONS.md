@@ -1,0 +1,25 @@
+# 后台管理与设备授权（不属于课堂界面）
+
+按用户要求，课堂里移除了 AI 服务配置入口、后端地址、课堂管理口令、环境变量说明及连接测试。模型选择、开始语音、静音和断开保留，Emma、课程和教材不改。长期厂商 Key 从未进入 React。
+
+服务配置继续由管理员在 Render 服务 Environment 管理，变量名称保持 `DASHSCOPE_API_KEY`、`DASHSCOPE_WORKSPACE_ID`、`DASHSCOPE_REGION`、`CLASSROOM_ACCESS_CODE`。最后一项现在仅作后台管理凭据与设备凭证签名密钥，不让学生填写。不要将完整 Key 或管理凭据发到聊天里。
+
+为了让课堂无配置且仍有访问控制，后台可生成一次性设备授权链接：
+
+```bash
+node --use-env-proxy --use-system-ca scripts/create-classroom-invite.mjs
+```
+
+工具从管理员执行环境读取现有管理凭据，不从浏览器读取，不把凭据放命令参数。默认访问现有 HTTPS 后端；本机调试可用环境变量 `CLASSROOM_API_URL=http://127.0.0.1:8787`。
+
+管理员把生成的链接私下交给使用者。使用者打开后自动交换权限，网页立即移除 URL 中的授权片段，正常课堂不显示任何管理表单。授权链接10分钟内有效且只能用一次，不包含 API Key 或管理员凭据。它仍是临时访问凭证，不应公开发布在仓库或日志中。
+
+浏览器授权使用后端签名的 HttpOnly、Secure、SameSite=None、Partitioned cookie，有效期7天；JavaScript 不能读取该 cookie。后端短效 API 令牌仅存当前页面内存，刷新时通过 cookie 恢复，不写 localStorage/sessionStorage。关闭第三方 cookie 或不支持分区 cookie 的浏览器可能只能保留本次页面权限，刷新后需重新授权；不能声称所有移动端均已验证。旋转后台 `CLASSROOM_ACCESS_CODE` 可撤销全部设备凭证。服务器重启后签名 cookie 仍有效；未使用的邀请和短期令牌因在内存中会失效。
+
+未经授权的访客不能自行申请语音权限，也不会获得付费模型的匿名开放接口。后台创建邀请需要管理员凭据，并拒绝浏览器 Origin 请求；课堂只获得自己会话的短期令牌。来源校验、单次 WS 票据、请求限额、单并发和10分钟时长仍保留。
+
+Render 模板保持 Free，并切换为在提交更新后自动部署，方便后续后台配置及修复同步；不增加服务或付费资源。是否已经生效需检查真实 `/api/voice/session`（匿名应401，旧后端为404）和管理员创建邀请接口。若 Blueprint 自动同步关闭，需在既有 Render 服务执行 Manual Deploy → Deploy latest commit，不需要重填 Key 或重新创建项目。
+
+本轮修改前 Git 检查点：`before-admin-config-removal`。测试覆盖匿名拒绝、邀请过期和单次使用、cookie签名/篡改/轮换、跨域凭证和 StrictMode 下只交换一次。前端仅持久化模型偏好；旧后端地址偏好自动清除，不再把部署地址交给用户填写。公开后端地址仍是网络请求必需的公开信息，不是秘密。
+
+真实语音链路已经在旧部署上用合成英文输入做过一次端到端实测：识别 `Hello, Emma. I like dogs.` 并返回真实 Emma 音频195840字节及文字字幕。输入为机器合成语音，不等于儿童语音准确率、手机声学回声或打断质量验收。

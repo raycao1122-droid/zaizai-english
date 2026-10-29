@@ -1,3 +1,4 @@
+import { createClassroomAccess } from "./access.mjs";
 import { randomBytes, timingSafeEqual, createHash } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
 import { QwenRealtimeAdapter, QWEN_MODEL, qwenConfig } from "./adapters.mjs";
@@ -16,12 +17,10 @@ export function safeContext(input) {
       hints: Math.min(10000, Math.max(0, Number(input.hints) || 0)),
     },
     history: Array.isArray(input.history)
-      ? input.history
-          .slice(-8)
-          .map((m) => ({
-            speaker: m?.speaker === "Emma" ? "Emma" : "在在",
-            text: String(m?.text || "").slice(0, 500),
-          }))
+      ? input.history.slice(-8).map((m) => ({
+          speaker: m?.speaker === "Emma" ? "Emma" : "在在",
+          text: String(m?.text || "").slice(0, 500),
+        }))
       : [],
     records:
       "Only page actions available. Historical reports, learning progress and pronunciation are DEMO DATA, not learning evidence.",
@@ -51,6 +50,9 @@ export function createVoiceGateway(
     env.CLASSROOM_ACCESS_CODE &&
       env.CLASSROOM_ACCESS_CODE.length >= 16 &&
       env.CLASSROOM_ACCESS_CODE.length <= 128,
+  );
+  const access = createClassroomAccess(
+    env.CLASSROOM_ACCESS_CODE || randomBytes(32).toString("hex"),
   );
   const cleanup = setInterval(() => {
     const now = Date.now();
@@ -148,6 +150,7 @@ export function createVoiceGateway(
     if (req.headers.origin) {
       res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
       res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
     }
     if (req.method === "OPTIONS") {
       res
@@ -159,10 +162,39 @@ export function createVoiceGateway(
         .end();
       return true;
     }
+    if (req.url === "/api/admin/classroom-invites") {
+      const supplied = req.headers.authorization?.replace(/^Bearer /, "") || "";
+      const digest = (value) => createHash("sha256").update(value).digest();
+      if (
+        req.method !== "POST" ||
+        req.headers.origin ||
+        !hasAccess ||
+        !timingSafeEqual(digest(supplied), digest(env.CLASSROOM_ACCESS_CODE))
+      ) {
+        json(res, 403, { error: "管理员授权失败。" });
+        return true;
+      }
+      if (!rate("admin-invite", 5)) {
+        json(res, 429, { error: "邀请创建过于频繁。" });
+        return true;
+      }
+      try {
+        const grant = access.issueInvite();
+        const classroom =
+          env.CLASSROOM_FRONTEND_URL ||
+          "https://raycao1122-droid.github.io/zaizai-english/";
+        const url = new URL(classroom);
+        url.hash = "classroom-access=" + grant;
+        json(res, 200, { url: url.href, expiresIn: 600 });
+      } catch {
+        json(res, 429, { error: "待使用邀请过多，请稍后重试。" });
+      }
+      return true;
+    }
     if (!req.url?.startsWith("/api/voice/")) {
       // Public deployments must not expose the older paid text API anonymously.
       if (publicMode && req.url === "/api/classroom/reply" && !identity(req)) {
-        json(res, 401, { error: "请先在 AI 服务配置中验证课堂访问口令。" });
+        json(res, 401, { error: "当前设备尚未授权，请联系课堂管理员。" });
         return true;
       }
       if (
@@ -177,7 +209,62 @@ export function createVoiceGateway(
     }
     try {
       if (req.method === "GET" && req.url === "/api/voice/config") {
-        json(res, 200, providers());
+        const data = providers();
+        json(res, 200, {
+          providers: data.providers.map(
+            ({ id, name, configured, status, implemented }) => ({
+              id,
+              name,
+              configured,
+              status,
+              implemented,
+            }),
+          ),
+        });
+        return true;
+      }
+      if (req.method === "GET" && req.url === "/api/voice/session") {
+        const device = access.verify(req.headers.cookie);
+        if (!device || !hasAccess) {
+          json(res, 401, {
+            error: "当前设备尚未获准使用语音，请联系课堂管理员。",
+          });
+          return true;
+        }
+        if (!rate("session:" + device.id, 10)) {
+          json(res, 429, { error: "请稍后再试。" });
+          return true;
+        }
+        if (tokens.size >= 100) {
+          json(res, 429, { error: "课堂繁忙，请稍后再试。" });
+          return true;
+        }
+        const token = randomBytes(32).toString("base64url");
+        tokens.set(token, { expires: Date.now() + 30 * 60000 });
+        json(res, 200, { token, expiresIn: 1800 });
+        return true;
+      }
+      if (req.method === "POST" && req.url === "/api/voice/authorize") {
+        if (!rate("invite-exchange:" + req.socket.remoteAddress, 20)) {
+          json(res, 429, { error: "请稍后再试。" });
+          return true;
+        }
+        const input = await body(req);
+        if (!hasAccess || tokens.size >= 100) {
+          json(res, 503, { error: "课堂暂不可用，请联系管理员。" });
+          return true;
+        }
+        const device = access.consume(input.grant);
+        if (!device) {
+          json(res, 401, {
+            error: "授权链接已失效或已使用，请联系管理员重新授权。",
+          });
+          return true;
+        }
+        res.setHeader("Set-Cookie", device.cookie);
+        const token = randomBytes(32).toString("base64url");
+        tokens.set(token, { expires: Date.now() + 30 * 60000 });
+        json(res, 200, { token, expiresIn: 1800 });
         return true;
       }
       if (req.method !== "POST") {
@@ -218,15 +305,14 @@ export function createVoiceGateway(
       const token = identity(req);
       if (!token) {
         json(res, 401, {
-          error: "请先验证课堂访问口令，授权只保留在本次页面内。",
+          error: "当前设备尚未授权，请联系课堂管理员。",
         });
         return true;
       }
       const input = await body(req);
       if (input.provider !== "qwen" || !providers().providers[0].configured) {
         json(res, 503, {
-          error:
-            "未配置：请完成百炼 Key、地域、业务空间和课堂访问口令设置。其他厂商尚未接入。",
+          error: "所选语音暂不可用，请联系课堂管理员。",
         });
         return true;
       }

@@ -28,7 +28,6 @@ export function ConversationPanel({
   waiting = false,
   realtime,
   voiceBlocked,
-  onServiceConfig,
   tab,
   draft,
   notes,
@@ -48,7 +47,6 @@ export function ConversationPanel({
   waiting?: boolean;
   realtime: RealtimeVoice;
   voiceBlocked: boolean;
-  onServiceConfig: () => void;
   tab: PanelTab;
   draft: string;
   notes: string;
@@ -97,7 +95,7 @@ export function ConversationPanel({
                 realtime.status === "connecting")
                 ? " · 会话中"
                 : p.configured
-                  ? " · 待验证"
+                  ? ""
                   : " · 未配置"}
             </option>
           ))}
@@ -152,7 +150,6 @@ export function ConversationPanel({
                   : "本地脚本对话 · 未接入 AI"}
             </div>
             <div className="voice-session-tools">
-              <button onClick={onServiceConfig}>AI 服务配置</button>
               {realtime.status === "connected" ||
               realtime.status === "connecting" ? (
                 <>
@@ -171,16 +168,9 @@ export function ConversationPanel({
               ) : (
                 <button
                   disabled={voiceBlocked || realtime.locked}
-                  onClick={() => {
-                    if (
-                      !realtime.authorized ||
-                      !realtime.selectedProvider.configured
-                    )
-                      onServiceConfig();
-                    else void realtime.connect();
-                  }}
+                  onClick={() => void realtime.connect()}
                 >
-                  {realtime.status === "error" ? "重新连接" : "连接语音"}
+                  {realtime.status === "error" ? "重新连接" : "开始语音"}
                 </button>
               )}
             </div>

@@ -37,12 +37,14 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       this.audio = new AudioContext({ sampleRate: 16000 });
       await this.audio.resume();
       if (this.closed) return;
-      const ticket = await api(
-        options.base,
-        "/api/voice/ticket",
-        options.token,
-        { provider: "qwen", context: options.context },
-      );
+      const accessToken = options.authorize
+        ? await options.authorize()
+        : options.token;
+      if (this.closed) return;
+      const ticket = await api(options.base, "/api/voice/ticket", accessToken, {
+        provider: "qwen",
+        context: options.context,
+      });
       if (this.closed) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -119,7 +121,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
           this.onEvent?.(e);
         };
         ws.onerror = () =>
-          this.fail("语音网络连接失败，请检查后端地址、授权和网络。");
+          this.fail("语音网络连接失败，请稍后重试。");
         ws.onclose = () => {
           if (!this.closed) this.fail("语音连接已断开，请点击重新连接。");
         };

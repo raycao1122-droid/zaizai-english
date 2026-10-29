@@ -121,9 +121,7 @@ export function VoiceControlBar({
           )}
         </label>
         <span className="voice-caption">
-          {realVoice
-            ? realVoice.status
-            : "连续语音演示 · AI / 语音 API 尚未接入"}
+          {realVoice ? realVoice.status : "连续语音 · 在课堂对话中点击开始语音"}
         </span>
       </div>
       <div className="speed-control" aria-label="模拟语速">

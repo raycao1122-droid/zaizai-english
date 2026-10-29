@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free
     branch: main
-    autoDeployTrigger: off
+    autoDeployTrigger: commit
     buildCommand: npm ci --omit=dev
     startCommand: npm run start:api
     healthCheckPath: /api/voice/config

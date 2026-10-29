@@ -14,7 +14,7 @@ import {
   OpenAIRealtimeAdapter,
 } from "../voice/adapters";
 const MODEL_KEY = "zaizai.voice.provider.v1";
-const BACKEND_KEY = "zaizai.voice.backend.v1";
+
 function stored(key: string) {
   try {
     return localStorage.getItem(key);
@@ -35,9 +35,7 @@ function initialModel(): ProviderId {
 }
 function initialBackend() {
   try {
-    return validateBackend(
-      stored(BACKEND_KEY) || import.meta.env.VITE_CLASSROOM_API_URL || "",
-    );
+    return validateBackend(import.meta.env.VITE_CLASSROOM_API_URL || "");
   } catch {
     return "";
   }
@@ -54,7 +52,7 @@ export function useRealtimeVoice({
   }) => void;
 }) {
   const [selected, setSelected] = useState<ProviderId>(initialModel);
-  const [base, setBase] = useState(initialBackend);
+  const [base] = useState(initialBackend);
   const [providers, setProviders] = useState(defaultProviders);
   const [status, setStatus] = useState<
     "disconnected" | "connecting" | "connected" | "error"
@@ -63,17 +61,11 @@ export function useRealtimeVoice({
     "idle" | "listening" | "thinking" | "speaking"
   >("idle");
   const [message, setMessage] = useState("未连接 · 语音不会自动启动");
-  const [testing, setTesting] = useState(false);
-  const [authorizing, setAuthorizing] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
-  const [configMessage, setConfigMessage] = useState("");
-  const [testResult, setTestResult] = useState("尚未测试真实连接");
   const [muted, setMuted] = useState(false);
   const [liveSubtitle, setLiveSubtitle] = useState("");
   const token = useRef("");
-  const authTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const expiresAt = useRef(0);
+  const bootstrap = useRef<Promise<unknown> | null>(null);
   const adapter = useRef<RealtimeVoiceService | null>(null);
   const busy = useRef(false);
   const generation = useRef(0);
@@ -82,8 +74,7 @@ export function useRealtimeVoice({
   current.current = { context, onTranscript };
   const transcript = useRef(new Map<string, string>());
   const selectedProvider = providers.find((p) => p.id === selected)!;
-  const locked =
-    status === "connected" || status === "connecting" || testing || authorizing;
+  const locked = status === "connected" || status === "connecting";
   async function refresh() {
     const expected = generation.current;
     try {
@@ -91,7 +82,6 @@ export function useRealtimeVoice({
       if (expected !== generation.current) return;
       if (!Array.isArray(result.providers))
         throw new Error("后端配置格式不正确。");
-      // Only known fields/providers; unimplemented adapters never become available from metadata.
       setProviders(
         defaultProviders.map((p) => {
           const remote = result.providers.find(
@@ -101,23 +91,14 @@ export function useRealtimeVoice({
             ? {
                 ...p,
                 configured: remote.configured === true,
-                status: remote.configured ? "待测试" : "未配置",
-                model: String(remote.model || ""),
-                region: String(remote.region || ""),
-                missing: Array.isArray(remote.missing)
-                  ? remote.missing.map(String)
-                  : [],
+                status: remote.configured ? "可连接" : "未配置",
               }
             : p;
         }),
       );
-      setConfigMessage("已读取后端配置；配置存在不代表真实语音已验收。");
     } catch {
       if (expected !== generation.current) return;
       setProviders(defaultProviders);
-      setConfigMessage(
-        "语音后端尚未连接。GitHub Pages 只提供网页，请先配置 HTTPS 后端地址。",
-      );
     }
   }
   useEffect(() => {
@@ -129,7 +110,7 @@ export function useRealtimeVoice({
   useEffect(
     () => () => {
       session.current++;
-      clearTimeout(authTimer.current);
+
       adapter.current?.disconnect();
     },
     [],
@@ -148,75 +129,49 @@ export function useRealtimeVoice({
     if (busy.current || locked) return;
     setSelected(id);
     save(MODEL_KEY, id);
-    setTestResult("尚未测试该模型的真实连接");
   }
-  function setBackend(value: string) {
-    if (locked || busy.current) return;
-    try {
-      const next = validateBackend(value);
-      generation.current++;
-      clearTimeout(authTimer.current);
-      token.current = "";
-      setAuthorized(false);
-      setBase(next);
-      save(BACKEND_KEY, next);
-      setProviders(defaultProviders);
-      setTestResult("后端地址已保存，请先验证课堂访问口令。");
-      setStatus("disconnected");
-      setMessage("未连接 · 后端地址已更新");
-    } catch (error) {
-      setConfigMessage(
-        error instanceof Error ? error.message : "后端地址无效。",
+  function acceptAccess(result: unknown) {
+    const value = result as { token?: unknown };
+    if (typeof value?.token !== "string" || value.token.length < 16)
+      throw new Error("课堂授权未完成。");
+    token.current = value.token;
+    expiresAt.current = Date.now() + 29 * 60000;
+  }
+  async function ensureAccess() {
+    if (token.current && expiresAt.current > Date.now()) return;
+    acceptAccess(await api(base, "/api/voice/session"));
+  }
+  useEffect(() => {
+    let active = true;
+    if (!bootstrap.current) {
+      const grant = new URLSearchParams(location.hash.slice(1)).get(
+        "classroom-access",
       );
+      if (grant)
+        history.replaceState(null, "", location.pathname + location.search);
+      // Retire the old browser-side deployment setting; operators manage it at build time.
+      try {
+        localStorage.removeItem("zaizai.voice.backend.v1");
+      } catch {
+        /* unavailable storage */
+      }
+      bootstrap.current = grant
+        ? api(base, "/api/voice/authorize", "", { grant })
+        : api(base, "/api/voice/session");
     }
-  }
-  async function authorize(code: string) {
-    if (busy.current || locked) return;
-    if (/^sk[-_]/i.test(code.trim())) {
-      setTestResult(
-        "这里是独立课堂访问口令，不能填写 API Key。请把厂商 Key 填到后端环境变量。",
-      );
-      return;
-    }
-    setAuthorizing(true);
-    const expected = generation.current;
-    try {
-      const result = await api(base, "/api/voice/login", "", { code });
-      if (expected !== generation.current) return;
-      if (typeof result.token !== "string" || result.token.length < 16)
-        throw new Error("后端未返回有效课堂访问授权。");
-      token.current = result.token;
-      setAuthorized(true);
-      clearTimeout(authTimer.current);
-      authTimer.current = setTimeout(() => {
-        token.current = "";
-        setAuthorized(false);
-        disconnect("课堂访问授权已过期，请重新验证口令。");
-      }, 1800000);
-      setTestResult("课堂访问已授权（本页30分钟）；尚未测试百炼连接。");
-    } catch (error) {
-      token.current = "";
-      setAuthorized(false);
-      setTestResult(error instanceof Error ? error.message : "授权失败。");
-    } finally {
-      setAuthorizing(false);
-    }
-  }
-  async function testConnection() {
-    if (busy.current || locked) return;
-    setTesting(true);
-    setTestResult("正在验证百炼鉴权与会话配置…");
-    try {
-      const result = await api(base, "/api/voice/test", token.current, {
-        provider: selected,
+    bootstrap.current
+      .then((result) => {
+        if (!active) return;
+        acceptAccess(result);
+        setMessage("语音已就绪 · 点击开始语音");
+      })
+      .catch(() => {
+        /* Ordinary classroom use never displays an admin setup form. */
       });
-      setTestResult(result.message);
-    } catch (error) {
-      setTestResult(error instanceof Error ? error.message : "连接测试失败。");
-    } finally {
-      setTesting(false);
-    }
-  }
+    return () => {
+      active = false;
+    };
+  }, [base]);
   function disconnect(reason = "已断开 · 麦克风已释放") {
     session.current++;
     adapter.current?.disconnect();
@@ -232,12 +187,7 @@ export function useRealtimeVoice({
     if (busy.current || locked) return;
     if (!selectedProvider.configured || !selectedProvider.implemented) {
       setStatus("error");
-      setMessage("未配置：请先打开 AI 服务配置。");
-      return;
-    }
-    if (!token.current) {
-      setStatus("error");
-      setMessage("请先在 AI 服务配置中验证课堂访问口令。");
+      setMessage("未配置：所选语音暂未开放，请选择其他模型。");
       return;
     }
     busy.current = true;
@@ -247,7 +197,7 @@ export function useRealtimeVoice({
     setMuted(false);
     setStatus("connecting");
     setPhase("idle");
-    setMessage("正在连接 · 请按提示允许麦克风");
+    setMessage("正在准备语音 · 请按提示允许麦克风");
     const service =
       selected === "qwen"
         ? new QwenRealtimeAdapter()
@@ -296,6 +246,10 @@ export function useRealtimeVoice({
       await service.connect({
         base,
         token: token.current,
+        authorize: async () => {
+          await ensureAccess();
+          return token.current;
+        },
         context: current.current.context,
         onEvent,
       });
@@ -303,7 +257,7 @@ export function useRealtimeVoice({
       service.updateContext(current.current.context);
       setStatus("connected");
       setPhase("listening");
-      setMessage("已连接 · 真实语音（待设备验收）");
+      setMessage("已连接 · Emma 正在聆听");
     } catch (error) {
       if (session.current !== id) return;
       service.disconnect();
@@ -330,21 +284,13 @@ export function useRealtimeVoice({
     providers,
     selectedProvider,
     base,
-    setBackend,
     status,
     phase,
     message,
     locked,
-    testing,
-    authorizing,
-    authorized,
-    configMessage,
-    testResult,
     muted,
     liveSubtitle,
     refresh,
-    authorize,
-    testConnection,
     connect,
     disconnect,
     toggleMute,

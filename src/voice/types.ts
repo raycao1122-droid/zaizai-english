@@ -5,9 +5,6 @@ export type Provider = {
   configured: boolean;
   implemented: boolean;
   status: string;
-  model?: string;
-  region?: string;
-  missing: string[];
 };
 export const defaultProviders: Provider[] = [
   {
@@ -16,7 +13,6 @@ export const defaultProviders: Provider[] = [
     configured: false,
     implemented: true,
     status: "未配置",
-    missing: ["后端尚未连接，无法读取配置"],
   },
   {
     id: "doubao",
@@ -24,7 +20,6 @@ export const defaultProviders: Provider[] = [
     configured: false,
     implemented: false,
     status: "未配置",
-    missing: ["适配器尚未接入"],
   },
   {
     id: "openai",
@@ -32,7 +27,6 @@ export const defaultProviders: Provider[] = [
     configured: false,
     implemented: false,
     status: "未配置",
-    missing: ["实时语音适配器尚未接入"],
   },
 ];
 export type VoiceContext = {
@@ -56,6 +50,7 @@ export type VoiceEvent = {
 export type ConnectOptions = {
   base: string;
   token: string;
+  authorize?: () => Promise<string>;
   context: VoiceContext;
   onEvent: (event: VoiceEvent) => void;
 };
@@ -80,9 +75,7 @@ export function validateBackend(value: string) {
     url.hash ||
     url.pathname !== "/"
   )
-    throw new Error(
-      "后端地址须为 HTTPS 根地址；本机开发可使用 http://127.0.0.1:8787。请勿填写密钥。",
-    );
+    throw new Error("语音服务地址无效。");
   return url.origin;
 }
 export function backendUrl(base: string, path: string) {
@@ -102,17 +95,15 @@ export async function api(
     },
     ...(data === undefined ? {} : { body: JSON.stringify(data) }),
     signal: AbortSignal.timeout(20000),
-    credentials: "omit",
+    credentials: "include",
   });
   let result;
   try {
     result = await response.json();
   } catch {
-    throw new Error(
-      "语音后端未部署或地址不正确；GitHub Pages 不能运行语音后端。",
-    );
+    throw new Error("语音服务暂时无法连接，请稍后重试。");
   }
   if (!response.ok)
-    throw new Error(result.error || "语音服务请求失败，请检查配置。");
+    throw new Error(result.error || "语音服务暂不可用，请稍后重试。");
   return result;
 }

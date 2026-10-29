@@ -325,3 +325,52 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
     await new Promise((r) => wss.close(r));
   }
 });
+
+test("backend-only invitations authorize devices without classroom configuration or public admin credentials", async () =>
+  fixture(configured, async ({ base, post }) => {
+    assert.equal(
+      (await post("/api/admin/classroom-invites", {}, code)).status,
+      403,
+      "browser origin cannot call admin entry",
+    );
+    assert.equal(
+      (await post("/api/admin/classroom-invites", {}, "wrong", "")).status,
+      403,
+    );
+    const issued = await (
+      await post("/api/admin/classroom-invites", {}, code, "")
+    ).json();
+    const grant = new URLSearchParams(new URL(issued.url).hash.slice(1)).get(
+      "classroom-access",
+    );
+    assert(grant);
+    assert(!issued.url.includes(code));
+    assert.equal(issued.expiresIn, 600);
+    const response = await post("/api/voice/authorize", { grant });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("access-control-allow-origin"), origin);
+    assert.equal(
+      response.headers.get("access-control-allow-credentials"),
+      "true",
+    );
+    const cookie = response.headers.get("set-cookie");
+    assert.match(cookie, /HttpOnly/);
+    const session = await fetch(base + "/api/voice/session", {
+      headers: { Origin: origin, Cookie: cookie.split(";")[0] },
+    });
+    assert.equal(session.status, 200);
+    assert((await session.json()).token);
+    assert.equal(
+      (await post("/api/voice/authorize", { grant })).status,
+      401,
+      "invitation cannot be reused",
+    );
+    assert.equal(
+      (await fetch(base + "/api/voice/session")).status,
+      401,
+      "anonymous callers cannot get tokens",
+    );
+    const catalog = await (await fetch(base + "/api/voice/config")).json();
+    assert(!JSON.stringify(catalog).includes("DASHSCOPE"));
+    assert(!JSON.stringify(catalog).includes("cn-beijing"));
+  }));

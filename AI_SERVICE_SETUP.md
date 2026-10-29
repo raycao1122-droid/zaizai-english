@@ -1,5 +1,7 @@
 # 在在 AI 英语课堂：实时语音配置指南
 
+> 最新规则：课堂中已删除全部服务管理表单。以下是管理员后台的历史配置说明，不能再引导学生到课堂填写 Key、后端地址或口令。当前后台操作及一次性设备授权见 [ADMIN_OPERATIONS.md](ADMIN_OPERATIONS.md)。
+
 当前代码位于原项目 `/workspace/zaizai-english`，分支 `m3-text-integration`。本轮没有创建云服务、购买资源或发布新版前端。原 GitHub Pages 网站仍为已验收的 M2。
 
 ## 先知道填在哪里
