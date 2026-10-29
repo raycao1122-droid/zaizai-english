@@ -127,7 +127,9 @@ export function LessonStage({
           </button>
         </div>
         <div className="feedback-space" aria-live="polite">
-          {selected ? (
+          {hint && selected !== target ? (
+            <div className="hint-text">{animal.hint}</div>
+          ) : selected ? (
             <div
               className={`feedback ${selected === target ? "success" : "retry"}`}
             >
@@ -142,8 +144,6 @@ export function LessonStage({
                   : "Not quite. Look carefully and try again."}
               </span>
             </div>
-          ) : hint ? (
-            <div className="hint-text">{animal.hint}</div>
           ) : (
             <span className="choose-note">点击动物图片，和 Emma 一起练习</span>
           )}

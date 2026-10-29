@@ -294,3 +294,134 @@ test("settings translation and text answers are local and explicit", async ({
   await page.getByRole("button", { name: "模拟播放课堂提问" }).click();
   await expect(page.locator(".toast")).toContainText("尚未接入音频或语音 API");
 });
+
+test("M1 refinement: notes and unsent answer survive exit and reentry", async ({
+  page,
+}) => {
+  await openClass(page);
+  await page.getByRole("tab", { name: "课堂笔记" }).click();
+  await page
+    .getByRole("textbox", { name: "本次课堂笔记" })
+    .fill("rabbit — 兔子");
+  await page
+    .getByRole("textbox", { name: "输入英文模拟回答" })
+    .fill("It's a dog");
+  await page.getByRole("button", { name: "退出课堂", exact: true }).click();
+  await page.getByRole("button", { name: "确认退出" }).click();
+  await page.getByRole("button", { name: "重新进入课堂" }).click();
+  await expect(page.getByRole("tab", { name: "课堂笔记" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("textbox", { name: "本次课堂笔记" })).toHaveValue(
+    "rabbit — 兔子",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "输入英文模拟回答" }),
+  ).toHaveValue("It's a dog");
+});
+
+test("M1 refinement: pause preserves an unsent answer until resume", async ({
+  page,
+}) => {
+  await openClass(page);
+  const input = page.getByRole("textbox", { name: "输入英文模拟回答" });
+  await input.fill("dog");
+  await page.getByRole("button", { name: "暂停课堂", exact: true }).click();
+  await expect(input).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "发送模拟回答" }),
+  ).toBeDisabled();
+  await expect(input).toHaveValue("dog");
+  await closeToast(page);
+  await page.screenshot({
+    path: "screenshots/05-paused-draft.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page
+    .locator(".device-controls")
+    .getByRole("button", { name: "继续课堂" })
+    .click();
+  await expect(input).toBeEnabled();
+  await expect(input).toHaveValue("dog");
+  await input.press("Enter");
+  await expect(page.locator(".animal-dog")).toHaveClass(/correct/);
+});
+
+test("M1 refinement: paused classroom also locks directory navigation", async ({
+  page,
+}) => {
+  await openClass(page);
+  await page.getByRole("button", { name: "暂停课堂", exact: true }).click();
+  await page.getByRole("button", { name: "课程目录", exact: true }).click();
+  const target = page.getByRole("button", { name: /4\s*找一找兔子/ });
+  await expect(target).toBeDisabled();
+  await expect(page.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
+  await page.keyboard.press("Escape");
+  await page
+    .locator(".device-controls")
+    .getByRole("button", { name: "继续课堂" })
+    .click();
+  await page.getByRole("button", { name: "课程目录", exact: true }).click();
+  await target.click();
+  await expect(
+    page.getByRole("heading", { name: "Can you find the rabbit?" }),
+  ).toBeVisible();
+});
+
+test("M1 refinement: wrong choice still allows a useful animal hint", async ({
+  page,
+}) => {
+  await openClass(page);
+  await page.getByRole("button", { name: "选择 cat", exact: true }).click();
+  await page.getByRole("button", { name: "提示我一下" }).click();
+  await expect(page.locator(".hint-text")).toContainText("floppy ears");
+  await closeToast(page);
+  await page.screenshot({
+    path: "screenshots/04-retry-hint.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.getByRole("button", { name: "收起提示" }).click();
+  await expect(page.locator(".hint-text")).toHaveCount(0);
+  await expect(page.locator(".feedback")).toContainText("Not quite");
+  await page.getByRole("button", { name: "提示我一下" }).click();
+  await page.getByRole("button", { name: "选择 dog", exact: true }).click();
+  await expect(page.locator(".feedback")).toContainText("Great!");
+});
+
+test("M1 refinement: reset restores default panel, draft and lesson state", async ({
+  page,
+}) => {
+  await openClass(page);
+  await page.getByRole("tab", { name: "课堂笔记" }).click();
+  await page
+    .getByRole("textbox", { name: "本次课堂笔记" })
+    .fill("practice rabbit");
+  await page.getByRole("textbox", { name: "输入英文模拟回答" }).fill("rabbit");
+  await page.getByRole("button", { name: "收起辅助面板" }).click();
+  await page.getByRole("button", { name: "下一步", exact: true }).click();
+  await page.getByRole("button", { name: "重新开始", exact: true }).click();
+  await expect(
+    page.getByRole("complementary", { name: "课堂辅助面板" }),
+  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "课堂对话" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "输入英文模拟回答" }),
+  ).toHaveValue("");
+  await page.getByRole("tab", { name: "课堂笔记" }).click();
+  await expect(page.getByRole("textbox", { name: "本次课堂笔记" })).toHaveValue(
+    "",
+  );
+  await expect(page.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
+});

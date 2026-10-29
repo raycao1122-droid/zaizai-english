@@ -20,6 +20,7 @@ import {
   voiceCycle,
   type AnimalId,
   type Message,
+  type PanelTab,
   type VoiceState,
 } from "./data/mockLesson";
 
@@ -28,6 +29,9 @@ export default function App() {
   const [selected, setSelected] = useState<AnimalId | null>(null);
   const [hint, setHint] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("conversation");
+  const [draft, setDraft] = useState("");
+  const [notes, setNotes] = useState("");
   const [messages, setMessages] = useState<Message[]>(mockConversation);
   const [baseVoice, setBaseVoice] = useState<VoiceState>("listening");
   const [muted, setMuted] = useState(false);
@@ -74,6 +78,7 @@ export default function App() {
     );
   }
   function goStep(index: number) {
+    if (paused || exited) return;
     setStep(index);
     setSelected(null);
     setHint(false);
@@ -93,6 +98,11 @@ export default function App() {
     setSelected(null);
     setHint(false);
     setMessages(mockConversation);
+    setCollapsed(false);
+    setPanelTab("conversation");
+    setDraft("");
+    setNotes("");
+    setTranslate(false);
     setBaseVoice("listening");
     setMuted(false);
     setPaused(false);
@@ -115,7 +125,10 @@ export default function App() {
       <Header
         onNavigate={(name) => {
           if (name === "上课") {
-            if (exited) setExited(false);
+            if (exited) {
+              setExited(false);
+              setPaused(false);
+            }
           } else setModal(name);
         }}
         onSettings={() => setModal("课堂设置")}
@@ -127,7 +140,9 @@ export default function App() {
             <span className="demo-badge">M1 模拟课堂</span>
             <h1>课堂已退出</h1>
             <p>Emma 在这里等你。准备好了，就回来继续认识动物吧。</p>
-            <p className="muted-copy">本次练习进度仍保留在当前页面中。</p>
+            <p className="muted-copy">
+              本次练习进度、笔记和未发送的回答仍保留。
+            </p>
             <div className="reentry-actions">
               <button
                 className="primary-button"
@@ -174,6 +189,13 @@ export default function App() {
             />
             <ConversationPanel
               hidden={collapsed}
+              disabled={paused}
+              tab={panelTab}
+              draft={draft}
+              notes={notes}
+              onTabChange={setPanelTab}
+              onDraftChange={setDraft}
+              onNotesChange={setNotes}
               messages={messages}
               target={target}
               translate={translate || hint}
@@ -248,7 +270,9 @@ export default function App() {
               <div className="modal-illustration">
                 <LogOut size={34} />
               </div>
-              <p>要暂时离开课堂吗？本次页面中的练习进度会保留。</p>
+              <p>
+                要暂时离开课堂吗？练习进度、笔记和未发送的回答会保留在本次页面中。
+              </p>
               <div className="modal-actions">
                 <button className="soft-button" onClick={() => setModal(null)}>
                   继续学习
@@ -297,6 +321,7 @@ export default function App() {
                 {mockLesson.steps.map((s, i) => (
                   <button
                     key={i}
+                    disabled={paused}
                     onClick={() => {
                       goStep(i);
                       setModal(null);
@@ -312,6 +337,11 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              {paused && (
+                <p className="notice-copy">
+                  课堂已暂停，请先继续课堂后再切换练习。
+                </p>
+              )}
               <p className="notice-copy">
                 发音纠正、报告及长期档案待 M1 验收后开发。
               </p>

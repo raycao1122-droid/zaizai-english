@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   MessageCircle,
   Lightbulb,
@@ -8,7 +8,12 @@ import {
   Send,
   Plus,
 } from "lucide-react";
-import { animals, type AnimalId, type Message } from "../data/mockLesson";
+import {
+  animals,
+  type AnimalId,
+  type Message,
+  type PanelTab,
+} from "../data/mockLesson";
 import { assetUrl } from "../lib/assets";
 
 export function ConversationPanel({
@@ -16,6 +21,13 @@ export function ConversationPanel({
   target,
   translate,
   hidden,
+  disabled,
+  tab,
+  draft,
+  notes,
+  onTabChange,
+  onDraftChange,
+  onNotesChange,
   onCollapse,
   onAudio,
   onSend,
@@ -24,13 +36,17 @@ export function ConversationPanel({
   target: AnimalId;
   translate: boolean;
   hidden: boolean;
+  disabled: boolean;
+  tab: PanelTab;
+  draft: string;
+  notes: string;
+  onTabChange: (tab: PanelTab) => void;
+  onDraftChange: (draft: string) => void;
+  onNotesChange: (notes: string) => void;
   onCollapse: () => void;
   onAudio: () => void;
   onSend: (text: string) => void;
 }) {
-  const [tab, setTab] = useState("conversation");
-  const [draft, setDraft] = useState("");
-  const [notes, setNotes] = useState("");
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest" });
@@ -39,7 +55,7 @@ export function ConversationPanel({
     { id: "conversation", label: "课堂对话", Icon: MessageCircle },
     { id: "tips", label: "学习提示", Icon: Lightbulb },
     { id: "notes", label: "课堂笔记", Icon: NotebookPen },
-  ];
+  ] satisfies { id: PanelTab; label: string; Icon: typeof MessageCircle }[];
   return (
     <aside
       className="conversation-panel"
@@ -56,7 +72,7 @@ export function ConversationPanel({
               id={`tab-${id}`}
               key={id}
               className={tab === id ? "active" : ""}
-              onClick={() => setTab(id)}
+              onClick={() => onTabChange(id)}
               title={label}
             >
               <Icon size={19} />
@@ -155,11 +171,13 @@ export function ConversationPanel({
               id="class-notes"
               placeholder="例如：rabbit — 兔子"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => onNotesChange(e.target.value)}
             />
             <button
               className="soft-button"
-              onClick={() => setNotes((n) => `${n}${n ? "\n" : ""}${target}`)}
+              onClick={() =>
+                onNotesChange(`${notes}${notes ? "\n" : ""}${target}`)
+              }
             >
               <Plus size={17} />
               加入当前单词
@@ -174,10 +192,10 @@ export function ConversationPanel({
         className="chat-input"
         onSubmit={(e) => {
           e.preventDefault();
-          if (draft.trim()) {
+          if (!disabled && draft.trim()) {
             onSend(draft.trim());
-            setDraft("");
-            setTab("conversation");
+            onDraftChange("");
+            onTabChange("conversation");
           }
         }}
       >
@@ -186,15 +204,18 @@ export function ConversationPanel({
         </span>
         <input
           aria-label="输入英文模拟回答"
-          placeholder="输入英文，练习回答…"
+          placeholder={
+            disabled ? "已暂停，继续课堂后发送" : "输入英文，练习回答…"
+          }
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => onDraftChange(e.target.value)}
+          disabled={disabled}
           maxLength={160}
         />
         <button
           type="submit"
           aria-label="发送模拟回答"
-          disabled={!draft.trim()}
+          disabled={disabled || !draft.trim()}
         >
           <Send size={22} fill="currentColor" />
         </button>

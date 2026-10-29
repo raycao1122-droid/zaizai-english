@@ -128,7 +128,11 @@ export function VoiceControlBar({
           </button>
         ))}
       </div>
-      <button className="reset-button" onClick={onReset}>
+      <button
+        className="reset-button"
+        onClick={onReset}
+        title="重置练习、对话和本次笔记"
+      >
         <RotateCcw size={28} />
         <span>重新开始</span>
       </button>

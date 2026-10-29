@@ -1,6 +1,7 @@
 import { assetUrl } from "../lib/assets";
 
 export type AnimalId = "dog" | "cat" | "bird" | "rabbit";
+export type PanelTab = "conversation" | "tips" | "notes";
 export type VoiceState =
   | "speaking"
   | "listening"
