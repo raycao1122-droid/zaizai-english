@@ -66,12 +66,16 @@ test.describe("mobile audio replay with synthetic microphone and relay audio", (
       let relay: import("@playwright/test").WebSocketRoute | undefined,
         frameCount = 0;
       const controls: { type: string; muted?: boolean }[] = [];
+      let silentFrames = 0;
       await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
         relay = ws;
         ws.onMessage((raw) => {
           const e = JSON.parse(String(raw));
-          if (e.type === "audio") frameCount++;
-          else controls.push(e);
+          if (e.type === "audio") {
+            frameCount++;
+            if (Buffer.from(e.audio, "base64").every((b) => b === 0))
+              silentFrames++;
+          } else controls.push(e);
         });
         ws.send(JSON.stringify({ type: "ready" }));
       });
@@ -163,11 +167,26 @@ test.describe("mobile audio replay with synthetic microphone and relay audio", (
       await expect
         .poll(() => emma.evaluate((e: HTMLAudioElement) => e.currentTime))
         .toBeGreaterThan(0.05);
-      await expect
-        .poll(() => controls.some((e) => e.type === "mute" && e.muted))
-        .toBeTruthy();
+      const beforeSilence = silentFrames;
+      await expect.poll(() => silentFrames).toBeGreaterThan(beforeSilence);
+      expect(controls.some((e) => e.type === "mute")).toBe(false);
+      // A real answer arriving during local replay waits, then plays automatically.
+      relay!.send(JSON.stringify({ type: "response-started" }));
+      relay!.send(
+        JSON.stringify({
+          type: "audio",
+          id: "queued-reply",
+          audio: pcm.toString("base64"),
+        }),
+      );
+      await expect(page.locator(".voice-connection-status")).not.toContainText(
+        "Emma 正在说话",
+      );
       await emma.evaluate((e: HTMLAudioElement) => e.pause());
-      await expect.poll(() => controls.at(-1)?.muted).toBe(false);
+      await expect(page.locator(".voice-connection-status")).toContainText(
+        "Emma 正在说话",
+      );
+      expect(controls.some((e) => e.type === "mute")).toBe(false);
       await page
         .getByRole("button", { name: "回听我的录音", exact: true })
         .click();

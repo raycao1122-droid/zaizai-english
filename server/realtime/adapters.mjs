@@ -40,8 +40,8 @@ export function sessionSettings(context) {
     },
     input_audio_transcription: { model: "qwen3-asr-flash-realtime" },
     turn_detection: {
-      type: "semantic_vad",
-      threshold: 0.1,
+      type: "server_vad",
+      threshold: 0.4,
       prefix_padding_ms: 500,
       silence_duration_ms: 1200,
     },
@@ -66,6 +66,7 @@ export class QwenRealtimeAdapter extends EventEmitter {
     this.responding = false;
   }
   connect(context) {
+    this.context = context;
     return new Promise((resolve, reject) => {
       const config = qwenConfig(this.env);
       if (!config.configured)
@@ -187,6 +188,19 @@ export class QwenRealtimeAdapter extends EventEmitter {
       });
     });
   }
+  startGreeting() {
+    if (!this.ready || this.greeted) return;
+    this.greeted = true;
+    // Official DashScope SDK create_response(instructions=...) places this in response.instructions.
+    this.send({
+      type: "response.create",
+      response: {
+        instructions:
+          emmaInstructions(this.context) +
+          "\nThe voice classroom has just connected. Give Zaizai a short friendly greeting and ask one easy question about the current lesson. This is the teacher opening, never a student answer.",
+      },
+    });
+  }
   cancelResponse() {
     this.cancelId = "cancel-" + Date.now();
     this.send({ type: "response.cancel", event_id: this.cancelId });
@@ -199,6 +213,7 @@ export class QwenRealtimeAdapter extends EventEmitter {
     if (this.ready) this.send({ type: "input_audio_buffer.append", audio });
   }
   updateContext(context) {
+    this.context = context;
     if (this.ready)
       this.send({
         type: "session.update",

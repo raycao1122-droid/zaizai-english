@@ -25,6 +25,12 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   private onEvent?: (event: VoiceEvent) => void;
   private acceptingAudio = true;
   private sending = false;
+  private replaying = false;
+  private heldAudio: string[] = [];
+  private heldBytes = 0;
+  private heldBuffers: { buffer: AudioBuffer; offset: number }[] = [];
+  private sourceStarts = new Map<AudioBufferSourceNode, number>();
+  private silence = btoa(String.fromCharCode(...new Uint8Array(1280)));
   private inputRing: Uint8Array[] = [];
   private inputSegment: {
     id: string;
@@ -54,6 +60,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       await this.audio.resume();
       if (this.closed) return;
       this.audio.onstatechange = () => {
+        if (this.audio?.state === "running") this.drainHeld();
         if (!this.closed && this.sending)
           this.onEvent?.({
             type:
@@ -100,6 +107,10 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
           return;
         if (this.ws!.bufferedAmount > 128000)
           return this.fail("音频网络拥塞，已停止录音，请重新连接。");
+        if (this.replaying) {
+          this.send({ type: "audio", audio: this.silence });
+          return;
+        }
         const bytes = new Uint8Array(data);
         this.inputRing.push(bytes);
         if (this.inputRing.length > 250) this.inputRing.shift();
@@ -243,7 +254,15 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
                 segment.bytes += bytes.length;
                 this.outputSegments.set(id, segment);
               }
-              this.play(e.audio);
+              if (this.replaying || this.audio?.state !== "running") {
+                this.heldBytes += bytes.length;
+                if (this.heldBytes > 960000) {
+                  this.fail("回复等待播放过久，请重新连接。");
+                  return;
+                }
+                this.heldAudio.push(e.audio);
+                if (!this.replaying) this.onEvent?.({ type: "audio-paused" });
+              } else this.play(e.audio);
             } catch {
               this.fail("语音音频格式无效。");
               return;
@@ -310,6 +329,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   async resumeAudio() {
     if (this.audio && this.audio.state !== "closed") {
       await this.audio.resume();
+      this.drainHeld();
       this.onEvent?.({ type: "audio-resumed" });
     }
   }
@@ -342,22 +362,76 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
         if (value >= 32768) value -= 65536;
         channel[i] = value / 32768;
       }
-      if (this.nextTime - audio.currentTime > 8)
+      if (this.nextTime - audio.currentTime > 20)
         return this.fail("语音播放积压，已停止会话，请重试。");
-      const source = audio.createBufferSource();
-      source.buffer = buffer;
-      source.connect(audio.destination);
-      this.sources.add(source);
-      source.onended = () => {
-        this.sources.delete(source);
-        if (!this.sources.size && !this.closed)
-          this.onEvent?.({ type: "playback-ended" });
-      };
-      const start = Math.max(audio.currentTime + 0.02, this.nextTime);
-      source.start(start);
-      this.nextTime = start + buffer.duration;
+      this.schedule(buffer);
     } catch {
       this.fail("语音播放失败，请检查浏览器音频设置。");
+    }
+  }
+  private schedule(buffer: AudioBuffer, offset = 0) {
+    const audio = this.audio;
+    if (!audio || audio.state !== "running") return;
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audio.destination);
+    const start = Math.max(audio.currentTime + 0.02, this.nextTime);
+    this.sources.add(source);
+    this.sourceStarts.set(source, start - offset);
+    source.onended = () => {
+      this.sources.delete(source);
+      this.sourceStarts.delete(source);
+      if (!this.sources.size && !this.closed)
+        this.onEvent?.({ type: "playback-ended" });
+    };
+    source.start(start, offset);
+    this.nextTime = start + buffer.duration - offset;
+    this.onEvent?.({ type: "playback-started" });
+  }
+  private drainHeld() {
+    if (
+      this.replaying ||
+      this.muted ||
+      this.closed ||
+      this.audio?.state !== "running"
+    )
+      return;
+    const buffers = this.heldBuffers;
+    this.heldBuffers = [];
+    const audio = this.heldAudio;
+    this.heldAudio = [];
+    this.heldBytes = 0;
+    for (const clip of buffers) this.schedule(clip.buffer, clip.offset);
+    for (const chunk of audio) this.play(chunk);
+  }
+  setReplay(active: boolean) {
+    if (this.replaying === active) return;
+    this.replaying = active;
+    this.stream?.getAudioTracks().forEach((track) => {
+      track.enabled = !this.muted && !active;
+    });
+    if (active) {
+      const now = this.audio?.currentTime || 0;
+      for (const source of this.sources) {
+        const offset = Math.max(0, now - (this.sourceStarts.get(source) || 0));
+        if (source.buffer && offset < source.buffer.duration)
+          this.heldBuffers.push({ buffer: source.buffer, offset });
+        source.onended = null;
+        try {
+          source.stop();
+        } catch {
+          /* ended */
+        }
+      }
+      this.sources.clear();
+      this.sourceStarts.clear();
+      this.nextTime = 0;
+      // Send silence, not input_audio_buffer.clear: the preceding utterance must still reach VAD/AI.
+    } else {
+      this.drainHeld();
+      void this.resumeAudio().catch(() =>
+        this.onEvent?.({ type: "audio-paused" }),
+      );
     }
   }
   private stopPlayback() {
@@ -370,12 +444,16 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
       }
     }
     this.sources.clear();
+    this.sourceStarts.clear();
+    this.heldBuffers = [];
+    this.heldAudio = [];
+    this.heldBytes = 0;
     this.nextTime = 0;
   }
   setMuted(muted: boolean) {
     this.muted = muted;
     this.stream?.getAudioTracks().forEach((t) => {
-      t.enabled = !muted;
+      t.enabled = !muted && !this.replaying;
     });
     if (muted) {
       this.finishInput();

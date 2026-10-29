@@ -276,16 +276,20 @@ test("slow session startup drops pre-connection microphone frames instead of flo
   await service(page);
   let frames = 0,
     ready = false,
-    beforeReady = 0;
+    beforeReady = 0,
+    readyAt = 0,
+    initialFrames = 0;
   await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
     ws.onMessage((raw) => {
       if (JSON.parse(String(raw)).type === "audio") {
         frames++;
+        if (ready && Date.now() - readyAt < 120) initialFrames++;
         if (!ready) beforeReady++;
       }
     });
     setTimeout(() => {
       ready = true;
+      readyAt = Date.now();
       ws.send(JSON.stringify({ type: "ready" }));
     }, 600);
   });
@@ -296,7 +300,8 @@ test("slow session startup drops pre-connection microphone frames instead of flo
   );
   await page.waitForTimeout(100);
   expect(beforeReady).toBe(0);
-  expect(frames).toBeLessThan(8);
+  expect(frames).toBeGreaterThan(0);
+  expect(initialFrames).toBeLessThan(8);
   await page.getByRole("button", { name: "断开语音", exact: true }).click();
 });
 test("server restart refreshes expired access once without asking the learner for configuration", async ({

@@ -248,7 +248,7 @@ export function useRealtimeVoice({
     if (previous && previous !== element) previous.pause();
     setReplaying(true);
     setPhase("idle");
-    adapter.current?.setMuted(true);
+    adapter.current?.setReplay?.(true);
     setInputLevel(0);
     if (adapter.current) setMessage("正在回听 · 麦克风暂停收音");
   }
@@ -256,12 +256,12 @@ export function useRealtimeVoice({
     if (replayElement.current !== element) return;
     replayElement.current = null;
     setReplaying(false);
-    adapter.current?.setMuted(muted);
     if (adapter.current) setPhase(muted ? "idle" : "listening");
     if (adapter.current)
       setMessage(
         muted ? "已静音 · 不发送麦克风音频" : "已连接 · Emma 正在聆听",
       );
+    adapter.current?.setReplay?.(false);
   }
   function playLatestEmma() {
     const clip = [...clipStore.current.entries()]
@@ -376,13 +376,26 @@ export function useRealtimeVoice({
         setMessage(e.message || "语音连接失败，请重试。");
         return;
       }
-      if (e.type === "interrupted" || e.type === "playback-ended")
+      if (e.type === "interrupted" || e.type === "playback-ended") {
         setPhase("listening");
-      if (e.type === "thinking" || e.type === "response-started")
+        if (!replayElement.current)
+          setMessage(
+            e.type === "interrupted"
+              ? "正在听你说话…"
+              : "已连接 · Emma 正在聆听",
+          );
+      }
+      if (e.type === "thinking" || e.type === "response-started") {
         setPhase("thinking");
+        if (!replayElement.current) setMessage("Emma 正在准备语音回答…");
+      }
       if (e.type === "turn-ended")
         setPhase((p) => (p === "thinking" ? "listening" : p));
-      if (e.type === "audio") setPhase("speaking");
+      if (e.type === "playback-started") {
+        setPhase("speaking");
+        if (!replayElement.current)
+          setMessage("Emma 正在说话 · 你可以直接打断她");
+      }
       if (
         (e.type === "subtitle" || e.type === "subtitle-delta") &&
         e.speaker &&
@@ -435,7 +448,7 @@ export function useRealtimeVoice({
   function toggleMute() {
     if (status !== "connected") return;
     const next = !muted;
-    adapter.current?.setMuted(next || replaying);
+    adapter.current?.setMuted(next);
     setMuted(next);
     setPhase(next ? "idle" : "listening");
     setMessage(

@@ -61,6 +61,7 @@ export interface RealtimeVoiceService {
   connect(options: ConnectOptions): Promise<void>;
   disconnect(): void;
   setMuted(muted: boolean): void;
+  setReplay?(active: boolean): void;
   updateContext(context: VoiceContext): void;
   recentRecording?(): { blob: Blob; duration: number } | null;
   resumeAudio?(): Promise<void>;

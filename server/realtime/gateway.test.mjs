@@ -282,6 +282,14 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
     assert.equal(received[0].session.audio.input.format.sample_rate, 16000);
     assert.equal(received[0].session.audio.output.format.sample_rate, 24000);
     assert.match(received[0].session.instructions, /cannot select materials/);
+    adapter.startGreeting();
+    adapter.startGreeting();
+    await new Promise((r) => setTimeout(r, 20));
+    const greetings = received.filter((e) => e.type === "response.create");
+    assert.equal(greetings.length, 1);
+    assert.match(greetings[0].response.instructions, /teacher opening/);
+    assert.match(greetings[0].response.instructions, /cannot select materials/);
+    assert(!received.some((e) => e.type === "conversation.item.create"));
     remote.send(JSON.stringify({ type: "response.created" }));
     remote.send(
       JSON.stringify({
@@ -330,7 +338,7 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
       events.some((e) => e.audio === "CCCC"),
       "next response can play again",
     );
-    assert.equal(sessionSettings({}).turn_detection.type, "semantic_vad");
+    assert.equal(sessionSettings({}).turn_detection.type, "server_vad");
   } finally {
     adapter.close();
     for (const ws of wss.clients) ws.terminate();
