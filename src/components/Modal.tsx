@@ -8,6 +8,7 @@ export function Modal({
   wide = false,
   className = "",
   titleIcon,
+  footer,
 }: {
   title: string;
   children: ReactNode;
@@ -15,6 +16,7 @@ export function Modal({
   wide?: boolean;
   className?: string;
   titleIcon?: ReactNode;
+  footer?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -55,6 +57,7 @@ export function Modal({
         </button>
       </div>
       <div className="modal-body">{children}</div>
+      {footer && <div className="modal-footer">{footer}</div>}
     </dialog>
   );
 }

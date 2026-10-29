@@ -20,8 +20,6 @@ export function CurriculumLibrary({
   materials,
   onAdd,
   onRemove,
-  onStart,
-  onClose,
   recent,
   onUse,
   selected,
@@ -30,8 +28,6 @@ export function CurriculumLibrary({
   materials: CurriculumMaterial[];
   onAdd: (items: CurriculumMaterial[]) => void;
   onRemove: (id: string) => void;
-  onStart: () => void;
-  onClose: () => void;
   recent: string[];
   onUse: (id: string) => void;
   selected: string | null;
@@ -257,25 +253,6 @@ export function CurriculumLibrary({
                       <Check className="shelf-selected-icon" size={22} />
                     )}
                   </button>
-                  <div className="shelf-card-actions">
-                    <button className="soft-button" onClick={() => info(item)}>
-                      查看信息
-                    </button>
-                    <button onClick={() => info(item, true)}>章节目录</button>
-                    {item.local && (
-                      <button
-                        className="icon-button"
-                        aria-label={`移除资料 ${item.name}`}
-                        onClick={() => {
-                          onRemove(item.id);
-                          if (detail === item.id) setDetail(null);
-                          if (selected === item.id) onSelect(null);
-                        }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
                   <button
                     className={`shelf-choose ${selected === item.id ? "active" : ""}`}
                     onClick={() => choose(item)}
@@ -289,6 +266,26 @@ export function CurriculumLibrary({
                       "选择教材"
                     )}
                   </button>
+                  <div className="shelf-card-actions">
+                    <button className="soft-button" onClick={() => info(item)}>
+                      查看信息
+                    </button>
+                    <button onClick={() => info(item, true)}>章节目录</button>
+                    {item.local && (
+                      <button
+                        className="icon-button"
+                        aria-label={`移除资料 ${item.name}`}
+                        onClick={() => {
+                          onRemove(item.id);
+                          setMessage("已移除本页资料登记。");
+                          if (detail === item.id) setDetail(null);
+                          if (selected === item.id) onSelect(null);
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
@@ -313,6 +310,22 @@ export function CurriculumLibrary({
                   章节目录
                 </button>
               </div>
+              {!chapters && preview.local && (
+                <dl className="shelf-detail-meta">
+                  <div>
+                    <dt>文件类型</dt>
+                    <dd>{preview.kind}</dd>
+                  </div>
+                  <div>
+                    <dt>文件大小</dt>
+                    <dd>{formatSize(preview.size ?? 0)}</dd>
+                  </div>
+                  <div>
+                    <dt>存储状态</dt>
+                    <dd>仅本页登记</dd>
+                  </div>
+                </dl>
+              )}
               <p>
                 {chapters
                   ? "尚无可用章节目录。真实教材解析尚未接入，不会凭空生成章节。"
@@ -372,17 +385,6 @@ export function CurriculumLibrary({
               {message}
             </p>
           )}
-          <div className="library-actions">
-            <button className="soft-button" onClick={onClose}>
-              继续本次课堂
-            </button>
-            <button className="primary-button" onClick={onStart}>
-              从头演示 Animals 示例课
-            </button>
-          </div>
-          <p className="stage-footnote">
-            从头演示会清空本次课堂草稿和笔记；选择教材不会切换课堂或生成课程。
-          </p>
         </div>
       </div>
     </section>

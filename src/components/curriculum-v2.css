@@ -580,3 +580,249 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 }
+
+/* Review refinement: reserve the header/footer and give the shelf more space. */
+.modal.curriculum-modal {
+  padding: 20px;
+}
+.curriculum-modal .modal-heading {
+  margin-bottom: 2px;
+}
+.curriculum-modal .modal-heading h2 {
+  font-size: 24px;
+}
+.curriculum-modal .shelf-subtitle {
+  margin: 0 0 10px 42px;
+  font-size: 12px;
+}
+.curriculum-modal .shelf-layout {
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 20px;
+}
+.curriculum-modal .shelf-main {
+  gap: 12px;
+}
+.curriculum-modal .shelf-banner {
+  min-height: 110px;
+  gap: 10px;
+}
+.curriculum-modal .shelf-banner > img {
+  width: 125px;
+  height: 110px;
+  object-position: 50% 28%;
+  border-radius: 0;
+  mask-image: linear-gradient(to right, #000 55%, transparent 100%);
+}
+.curriculum-modal .shelf-banner h3 {
+  font-size: 23px;
+  margin: 4px 0;
+}
+.curriculum-modal .shelf-banner p {
+  font-size: 12px;
+}
+.curriculum-modal .shelf-banner small {
+  margin-top: 3px;
+}
+.curriculum-modal .shelf-banner div > span {
+  display: none;
+}
+.curriculum-modal .shelf-banner-book {
+  width: 52px;
+  height: 52px;
+}
+.curriculum-modal .shelf-section-title {
+  margin-bottom: 8px;
+}
+.curriculum-modal .shelf-section-title h3 {
+  font-size: 16px;
+}
+.curriculum-modal .shelf-empty-recent {
+  padding: 8px 12px;
+  gap: 10px;
+}
+.curriculum-modal .shelf-empty-recent p {
+  margin-top: 2px;
+}
+.curriculum-modal .shelf-recent-grid article {
+  padding: 7px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover {
+  height: 52px;
+  width: 38px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover img {
+  height: 22px;
+  width: 30px;
+}
+.curriculum-modal .shelf-recent-grid .shelf-cover small,
+.curriculum-modal .shelf-recent-grid .shelf-cover > span {
+  display: none;
+}
+.curriculum-modal .shelf-recent-grid h4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.curriculum-modal .shelf-card.material-row {
+  padding: 11px;
+  gap: 8px;
+}
+.curriculum-modal .shelf-card.selected {
+  padding: 10px;
+}
+.curriculum-modal .shelf-cover {
+  height: 110px;
+  width: 82px;
+}
+.curriculum-modal .shelf-card-select strong {
+  font-size: 16px;
+  font-weight: 800;
+}
+.curriculum-modal .shelf-choose {
+  background: #327ef3;
+  color: #fff;
+  min-height: 40px;
+}
+.curriculum-modal .shelf-choose.active {
+  background: #205ec4;
+}
+.curriculum-modal .shelf-card-actions > button {
+  min-height: 30px;
+}
+.curriculum-modal .shelf-upload {
+  padding: 12px 16px;
+}
+.curriculum-modal .modal-footer {
+  flex-shrink: 0;
+  padding: 12px 4px 0;
+  border-top: 1px solid #e6eefb;
+  margin-top: 10px;
+  background: #fff;
+}
+.curriculum-modal .modal-footer .library-actions {
+  margin: 0;
+}
+.curriculum-modal .shelf-footer-note {
+  font-size: 10px;
+  color: #8096b3;
+  margin-top: 7px;
+  text-align: right;
+}
+@media (max-width: 1100px) {
+  .curriculum-modal .shelf-layout {
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .curriculum-modal .shelf-banner h3 {
+    font-size: 20px;
+  }
+}
+@media (max-width: 680px) {
+  .modal.curriculum-modal {
+    padding: 12px;
+  }
+  .curriculum-modal .shelf-layout {
+    display: flex;
+  }
+  .curriculum-modal .shelf-subtitle {
+    margin: 0 0 8px;
+    font-size: 11px;
+  }
+  .curriculum-modal .shelf-nav button {
+    min-height: 40px;
+    padding: 6px 4px;
+  }
+  .curriculum-modal .shelf-banner {
+    min-height: 100px;
+  }
+  .curriculum-modal .shelf-banner > img {
+    width: 88px;
+    height: 105px;
+  }
+  .curriculum-modal .shelf-banner h3 {
+    font-size: 17px;
+  }
+  .curriculum-modal .shelf-banner p {
+    display: none;
+  }
+  .curriculum-modal .shelf-banner small {
+    font-size: 9px;
+    line-height: 1.5;
+  }
+  .curriculum-modal .shelf-card-select strong {
+    font-size: 14px;
+  }
+  .curriculum-modal .shelf-choose,
+  .curriculum-modal .shelf-card-actions > button {
+    min-height: 44px;
+  }
+  .curriculum-modal .modal-footer .library-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 8px;
+  }
+  .curriculum-modal .modal-footer button {
+    font-size: 11px;
+    padding: 10px 8px;
+    min-height: 44px;
+  }
+  .curriculum-modal .shelf-footer-note {
+    font-size: 9px;
+    text-align: left;
+    line-height: 1.6;
+  }
+}
+.curriculum-modal .shelf-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.curriculum-modal .shelf-detail-meta dt {
+  color: #8197b5;
+  font-size: 10px;
+}
+.curriculum-modal .shelf-detail-meta dd {
+  margin: 3px 0 0;
+  color: #234b82;
+  font-weight: 700;
+}
+/* Keep the cover label and original animal fully visible in compact cards. */
+.curriculum-modal .shelf-card-select .shelf-cover {
+  padding: 6px;
+  justify-content: space-between;
+}
+.curriculum-modal .shelf-card-select .shelf-cover > small {
+  font-size: 6px;
+  line-height: 1;
+  margin: 0;
+}
+.curriculum-modal .shelf-card-select .shelf-cover > strong {
+  font-size: 16px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.curriculum-modal .shelf-card-select .shelf-cover > img {
+  width: 54px;
+  height: 40px;
+  min-height: 0;
+  flex-shrink: 0;
+}
+.curriculum-modal .shelf-card-select .shelf-cover > span {
+  font-size: 7px;
+  line-height: 1.2;
+  padding: 2px 5px;
+  flex-shrink: 0;
+}
+@media (max-width: 680px) {
+  .curriculum-modal .shelf-upload > div {
+    flex-basis: calc(100% - 54px);
+    min-width: 0;
+  }
+  .curriculum-modal .shelf-upload .soft-button {
+    flex: 0 0 auto;
+  }
+}

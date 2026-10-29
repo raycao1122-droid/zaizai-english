@@ -290,6 +290,32 @@ export default function App() {
               <BookOpen size={32} color="#327ef3" aria-hidden="true" />
             ) : undefined
           }
+          footer={
+            modal === "课程" ? (
+              <>
+                <div className="library-actions">
+                  <button
+                    className="soft-button"
+                    onClick={() => setModal(null)}
+                  >
+                    继续本次课堂
+                  </button>
+                  <button
+                    className="primary-button"
+                    onClick={() => {
+                      reset();
+                      setModal(null);
+                    }}
+                  >
+                    从头演示 Animals 示例课
+                  </button>
+                </div>
+                <p className="shelf-footer-note">
+                  从头演示会清空课堂草稿和笔记；选择教材不会生成课程。
+                </p>
+              </>
+            ) : undefined
+          }
           wide={["课程", "单词本", "错题本"].includes(modal)}
           onClose={() => setModal(null)}
         >
@@ -402,11 +428,6 @@ export default function App() {
                   current.filter((item) => item.id !== id),
                 )
               }
-              onStart={() => {
-                reset();
-                setModal(null);
-              }}
-              onClose={() => setModal(null)}
             />
           ) : modal === "单词本" || modal === "错题本" ? (
             <WordBook
