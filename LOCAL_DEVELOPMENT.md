@@ -4,6 +4,8 @@
 
 ## Mac 启动
 
+如果下载的是精简迁移包（根目录为 `zaizai-english-transfer`，包含 `.bundle` 和 `restore-and-start.command`），先完整解压，再双击 `restore-and-start.command`。它会还原出下述 `zaizai-english` 文件夹，并接着启动；需要本机 Git 和 Node.js。精简包保留同一套完整文件和全部 Git 历史，只是不重复存放工作副本。如果已有同名目标文件夹，脚本会停止，不覆盖已有内容。
+
 1. 下载迁移 ZIP 并解压。建议将解压出的 `zaizai-english` 文件夹放在「文稿」中，之后一直使用这个文件夹。
 2. 首次需要 [Node.js 24 LTS](https://nodejs.org/)。已有 Node.js 20.19+、22.12+ 或更新兼容版本也可运行；Git 用于保留后续修改。
 3. 双击 `start-local.command`；也可以在该文件夹的终端运行：
