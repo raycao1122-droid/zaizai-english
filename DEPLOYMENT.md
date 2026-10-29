@@ -39,3 +39,14 @@ npm run test:e2e
 ## 权限说明
 
 当前 GitHub 集成可以读取、推送此仓库及触发 Actions；新建个人仓库和开通 Pages 的 API 曾分别返回 `Resource not accessible by integration`。用户已在 GitHub 界面完成这两项设置。仓库 `admin: true` 标记不保证集成具备所有 API 权限；当前发布已无上述阻塞，不需要重复创建仓库或更改网络设置。
+
+
+## 2026-10-29：用户授权发布实时语音配置入口
+
+- 发布提交：`9772ace3c856b109447a908cd27066fedada6cf7`。main 与开发分支已推送，保留原 M2 历史。
+- GitHub Actions：https://github.com/raycao1122-droid/zaizai-english/actions/runs/40881019897 ，build/deploy 均成功。
+- 线上：https://raycao1122-droid.github.io/zaizai-english/ 。可见语音模型下拉框与 AI 服务配置入口，未配置公网后端时明确显示未连接。
+- 已使用正常 TLS 验证下载线上 HTML/JS/CSS，三者与采用 Pages 相同公开环境变量构建的本地发布文件逐字节相同；原始 `emma.svg` HTTP 200。生产子路径浏览器检查及10项后端测试通过。
+- 百炼云环境中的实际鉴权与 session 配置测试已成功，未发送音频或请求生成；不等于真人语音验收。
+- Render 未部署：当前没有 Render 登录、连接器或 API 凭据。官方 Free 模板已发布至 main，用户可从 https://render.com/deploy?repo=https://github.com/raycao1122-droid/zaizai-english 登录自己的账号，核对 Free 计划后在安全表单填写 DASHSCOPE_API_KEY、DASHSCOPE_WORKSPACE_ID、CLASSROOM_ACCESS_CODE。Codex 中的密钥不会自动同步到 Render，也未尝试提取原始密钥进行跨平台复制。
+- 部署说明后续仅为文档更新，以 `[skip ci]` 提交保存，不重复发布相同前端。

@@ -2,9 +2,9 @@
 
 云端固定项目目录：`/workspace/zaizai-english`。迁移到电脑后，以你打开的 `zaizai-english` 本地文件夹为固定项目目录，保留同一个 Git 仓库及全部历史。后续不要重建一套项目，也不要改动旁边的 ContentFlow 或其他项目。
 
-公开网站仍为 M2 模拟课堂。本分支新增 M3 文字后端，以及可切换的实时语音配置和百炼 WebSocket 适配器；默认仍是模拟模式，用户主动配置、授权并连接后才申请麦克风。百炼真实语音尚待 Key/业务空间及设备实测，其他语音厂商未接入。
+公开网站已发布模型选择和 AI 服务配置入口，原课堂默认仍为 M2 模拟模式。百炼服务端鉴权和会话配置已实测通过；公网语音后端尚待用户在 Render 账号中创建并配置，真实音频和设备体验尚未验收，其他语音厂商未接入。
 
-本轮交付见 [REALTIME_VOICE_DELIVERY.md](REALTIME_VOICE_DELIVERY.md)，Key 填写、后端部署候选和操作步骤见 [AI_SERVICE_SETUP.md](AI_SERVICE_SETUP.md)。没有自动部署或购买服务。
+本轮交付见 [REALTIME_VOICE_DELIVERY.md](REALTIME_VOICE_DELIVERY.md)，Key 填写、后端部署候选和操作步骤见 [AI_SERVICE_SETUP.md](AI_SERVICE_SETUP.md)。用户已授权部署：新版前端发布成功；未购买服务或创建收费后端。
 
 ## 运行
 
