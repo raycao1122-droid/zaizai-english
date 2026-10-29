@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { resolve, extname, sep } from "node:path";
 import { chromium } from "@playwright/test";
 
@@ -47,7 +48,11 @@ let browser;
 try {
   const origin = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
+    executablePath:
+      process.env.CHROMIUM_PATH ||
+      (process.platform === "linux" && existsSync("/usr/bin/chromium")
+        ? "/usr/bin/chromium"
+        : undefined),
   });
   const page = await browser.newPage({
     viewport: { width: 1440, height: 900 },

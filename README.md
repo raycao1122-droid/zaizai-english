@@ -1,10 +1,12 @@
 # 在在的英语课堂 · M1
 
-固定项目目录：`/workspace/zaizai-english`。后续在这个 Git 仓库上持续迭代，不要重建一套项目，也不要改动旁边的 ContentFlow。
+云端固定项目目录：`/workspace/zaizai-english`。迁移到电脑后，以你打开的 `zaizai-english` 本地文件夹为固定项目目录，保留同一个 Git 仓库及全部历史。后续不要重建一套项目，也不要改动旁边的 ContentFlow 或其他项目。
 
 本阶段：React + TypeScript + Vite + Tailwind CSS 前端，使用本地模拟数据。没有 AI、语音、麦克风、摄像头、发音评分或后端调用。底部按用户确认采用**连续语音状态模拟**。
 
 ## 运行
+
+电脑本地开发先看 [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)。Mac 安装 Node.js 24 LTS 后，双击项目根目录的 `start-local.command`，或在该文件夹终端执行 `bash start-local.command`，会安装依赖并打开本机课堂。
 
 环境使用 Node.js 24.19.0 / npm 11.9.0。
 
@@ -22,7 +24,7 @@ npm run preview -- --port 4173 --strictPort
 npm run test:e2e
 ```
 
-浏览器测试默认使用当前云环境自带的 `/usr/bin/chromium`，其他机器可通过 `CHROMIUM_PATH` 指定 Chromium 可执行文件。测试会启动或复用 5173 端口的开发服务器。截图保存在 `screenshots/`。
+浏览器测试在当前云环境使用系统 `/usr/bin/chromium`；其他机器默认使用 Playwright 管理的 Chromium，可先执行 `npx playwright install chromium`，也可用 `CHROMIUM_PATH` 指定现有 Chromium。测试会启动或复用 5173 端口的开发服务器。截图保存在 `screenshots/`。
 
 ## GitHub Pages 发布
 

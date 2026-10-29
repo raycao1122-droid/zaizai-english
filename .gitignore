@@ -8,3 +8,4 @@ playwright-report/
 *.log
 demo/raw/
 demo/*.webm
+.local-cache/
