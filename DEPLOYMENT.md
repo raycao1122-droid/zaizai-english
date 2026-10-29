@@ -50,3 +50,10 @@ npm run test:e2e
 - 百炼云环境中的实际鉴权与 session 配置测试已成功，未发送音频或请求生成；不等于真人语音验收。
 - Render 未部署：当前没有 Render 登录、连接器或 API 凭据。官方 Free 模板已发布至 main，用户可从 https://render.com/deploy?repo=https://github.com/raycao1122-droid/zaizai-english 登录自己的账号，核对 Free 计划后在安全表单填写 DASHSCOPE_API_KEY、DASHSCOPE_WORKSPACE_ID、CLASSROOM_ACCESS_CODE。Codex 中的密钥不会自动同步到 Render，也未尝试提取原始密钥进行跨平台复制。
 - 部署说明后续仅为文档更新，以 `[skip ci]` 提交保存，不重复发布相同前端。
+
+
+## Render 服务就绪与前端连接
+
+用户完成 Render 创建后，实际访问 `https://zaizai-classroom-api.onrender.com/api/voice/config` 返回 HTTP 200，Qwen 配置完整，无缺失项；其他厂商保持未配置。使用当前独立课堂口令验证成功，Pages Origin 的 CORS 允许正确。经过该公网后端调用 `/api/voice/test`，百炼鉴权及会话配置通过，测试后关闭连接，未录音或生成回复。
+
+Pages 构建默认公开后端地址设置为 `https://zaizai-classroom-api.onrender.com`，仓库变量 `CLASSROOM_API_URL` 仍可覆盖。只包含公开服务地址，没有把 Key 或课堂口令打包到前端。刷新网站 → AI 服务配置 → 验证课堂访问口令 → 连接真实语音 → 允许麦克风。真实音频/字幕/自然打断的设备体验仍待实测，配置测试不作替代。
