@@ -13,6 +13,9 @@ import { voiceLabels, type VoiceState } from "../data/mockLesson";
 export function VoiceControlBar({
   voice,
   realVoice,
+  onConnectVoice,
+  connectBlocked,
+  connectMessage,
   muted,
   paused,
   speed,
@@ -29,6 +32,9 @@ export function VoiceControlBar({
 }: {
   voice: VoiceState;
   realVoice?: { status: string; connected: boolean; onDisconnect: () => void };
+  onConnectVoice?: () => void;
+  connectBlocked?: boolean;
+  connectMessage?: string;
   muted: boolean;
   paused: boolean;
   speed: string;
@@ -57,14 +63,17 @@ export function VoiceControlBar({
           </span>
         </button>
         <button
-          onClick={onMute}
+          onClick={onConnectVoice || onMute}
+          disabled={Boolean(onConnectVoice && connectBlocked)}
           aria-pressed={muted}
           className={muted ? "device-muted" : ""}
         >
           {muted ? <MicOff size={29} /> : <Mic size={29} />}
           <span>
             {muted ? "已静音" : "麦克风"}
-            <small>{realVoice ? "真实语音" : "模拟"}</small>
+            <small>
+              {realVoice ? "真实语音" : onConnectVoice ? "点击连接" : "模拟"}
+            </small>
           </span>
         </button>
         <button
@@ -85,10 +94,25 @@ export function VoiceControlBar({
           </div>
           <button
             className="voice-orb"
-            onClick={realVoice ? onMute : onCycle}
-            aria-label={realVoice ? "切换真实语音静音" : "切换语音模拟状态"}
-            title={realVoice ? "真实麦克风静音" : "仅切换模拟状态，不录音"}
-            disabled={Boolean(realVoice && !realVoice.connected)}
+            onClick={onConnectVoice || (realVoice ? onMute : onCycle)}
+            aria-label={
+              onConnectVoice
+                ? "开始与 Emma 语音对话"
+                : realVoice
+                  ? "切换真实语音静音"
+                  : "切换语音模拟状态"
+            }
+            title={
+              onConnectVoice
+                ? "允许麦克风后与 Emma 语音对话"
+                : realVoice
+                  ? "真实麦克风静音"
+                  : "仅切换模拟状态，不录音"
+            }
+            disabled={Boolean(
+              (realVoice && !realVoice.connected) ||
+              (onConnectVoice && connectBlocked),
+            )}
           >
             {muted ? <MicOff size={43} /> : <Mic size={43} />}
           </button>
@@ -98,13 +122,21 @@ export function VoiceControlBar({
             ))}
           </div>
         </div>
-        <label className="voice-state-label">
+        <div className="voice-state-label">
           {realVoice ? (
             <button
               className="voice-disconnect"
               onClick={realVoice.onDisconnect}
             >
               断开真实语音
+            </button>
+          ) : onConnectVoice ? (
+            <button
+              className="voice-disconnect"
+              onClick={onConnectVoice}
+              disabled={connectBlocked}
+            >
+              开始真实语音
             </button>
           ) : (
             <select
@@ -119,9 +151,13 @@ export function VoiceControlBar({
               ))}
             </select>
           )}
-        </label>
+        </div>
         <span className="voice-caption">
-          {realVoice ? realVoice.status : "连续语音 · 在课堂对话中点击开始语音"}
+          {realVoice
+            ? realVoice.status
+            : onConnectVoice
+              ? connectMessage || "点击麦克风，与 Emma 语音对话"
+              : "连续语音 · 在课堂对话中点击开始语音"}
         </span>
       </div>
       <div className="speed-control" aria-label="模拟语速">

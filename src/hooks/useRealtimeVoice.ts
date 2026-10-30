@@ -56,6 +56,8 @@ export function useRealtimeVoice({
   const [base] = useState(initialBackend);
   const [providers, setProviders] = useState(defaultProviders);
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(false);
+  const [lessonSpeech, setLessonSpeech] = useState(false);
   const [status, setStatus] = useState<
     "disconnected" | "connecting" | "connected" | "error"
   >("disconnected");
@@ -87,12 +89,20 @@ export function useRealtimeVoice({
   const selectedProvider = providers.find((p) => p.id === selected)!;
   const locked = status === "connected" || status === "connecting";
   async function refresh() {
+    setLoading(true);
     const expected = generation.current;
     try {
       const result = await api(base, "/api/voice/config");
       if (expected !== generation.current) return;
       if (!Array.isArray(result.providers))
         throw new Error("后端配置格式不正确。");
+      setCatalogError(false);
+      setLessonSpeech(result.capabilities?.lessonSpeech === true);
+      setMessage((previous) =>
+        previous.startsWith("语音服务暂未响应")
+          ? "语音服务已就绪 · 点击开始语音"
+          : previous,
+      );
       setProviders(
         defaultProviders.map((p) => {
           const remote = result.providers.find(
@@ -110,6 +120,8 @@ export function useRealtimeVoice({
     } catch {
       if (expected !== generation.current) return;
       setProviders(defaultProviders);
+      setCatalogError(true);
+      setMessage("语音服务暂未响应，请点击重试语音服务。");
     } finally {
       if (expected === generation.current) setLoading(false);
     }
@@ -309,8 +321,12 @@ export function useRealtimeVoice({
     setMessage(reason);
     setLiveSubtitle("");
   }
-  async function connect() {
+  async function connect(openingText?: string) {
     if (busy.current || locked || loading) return;
+    if (catalogError) {
+      await refresh();
+      return;
+    }
     if (!selectedProvider.configured || !selectedProvider.implemented) {
       setStatus("error");
       setMessage("未配置：所选语音暂未开放，请选择其他模型。");
@@ -376,6 +392,10 @@ export function useRealtimeVoice({
         setMessage(e.message || "语音连接失败，请重试。");
         return;
       }
+      if (e.type === "notice") {
+        setMessage(e.message || "请稍后再试。");
+        return;
+      }
       if (e.type === "interrupted" || e.type === "playback-ended") {
         setPhase("listening");
         if (!replayElement.current)
@@ -428,6 +448,7 @@ export function useRealtimeVoice({
           return token.current;
         },
         context: current.current.context,
+        openingText,
         onEvent,
       });
       if (session.current !== id || adapter.current !== service) return;
@@ -455,11 +476,32 @@ export function useRealtimeVoice({
       next ? "已静音 · 不发送麦克风音频，Emma 播放已停止" : "已连接 · 正在聆听",
     );
   }
+  function speakLesson(text = current.current.context.prompt) {
+    if (loading) return;
+    if (!lessonSpeech) {
+      setMessage(
+        "当前语音版本暂不支持课件朗读；可以开始语音后直接和 Emma 说话。",
+      );
+      return;
+    }
+    if (status !== "connected") {
+      void connect(text);
+      return;
+    }
+    if (muted || replayElement.current) {
+      setMessage("请先取消静音或停止回听，再请 Emma 朗读。");
+      return;
+    }
+    adapter.current?.updateContext(current.current.context);
+    adapter.current?.speakLesson?.(text.slice(0, 300));
+  }
   return {
     selected,
     select,
     providers,
     loading,
+    catalogError,
+    lessonSpeech,
     selectedProvider,
     base,
     status,
@@ -483,6 +525,7 @@ export function useRealtimeVoice({
     clearRecordings,
     refresh,
     connect,
+    speakLesson,
     disconnect,
     toggleMute,
     authHeaders: (): Record<string, string> =>

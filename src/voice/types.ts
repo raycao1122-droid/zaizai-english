@@ -55,6 +55,7 @@ export type ConnectOptions = {
   token: string;
   authorize?: (refresh?: boolean) => Promise<string>;
   context: VoiceContext;
+  openingText?: string;
   onEvent: (event: VoiceEvent) => void;
 };
 export interface RealtimeVoiceService {
@@ -63,6 +64,7 @@ export interface RealtimeVoiceService {
   setMuted(muted: boolean): void;
   setReplay?(active: boolean): void;
   updateContext(context: VoiceContext): void;
+  speakLesson?(text: string): void;
   recentRecording?(): { blob: Blob; duration: number } | null;
   resumeAudio?(): Promise<void>;
 }
@@ -108,7 +110,12 @@ export async function api(
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...(data === undefined ? {} : { body: JSON.stringify(data) }),
-    signal: AbortSignal.timeout(20000),
+    // Free hosting can take longer to wake; don't misreport that as a missing key.
+    signal: AbortSignal.timeout(
+      path === "/api/voice/config" || path === "/api/voice/session"
+        ? 60000
+        : 20000,
+    ),
     credentials: "include",
   });
   let result;

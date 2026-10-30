@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openReady, openExercise, waitForArtwork } from "./helpers";
+import { openReady, openExercise, waitForArtwork, goToStage } from "./helpers";
 import { mkdirSync } from "node:fs";
 test.use({
   launchOptions: {
@@ -342,4 +342,182 @@ test("server restart refreshes expired access once without asking the learner fo
   expect(tickets).toBe(2);
   await expect(page.locator("dialog[open]")).toHaveCount(0);
   await page.getByRole("button", { name: "断开语音", exact: true }).click();
+});
+
+test("lesson speaker connects with the actual prompt, then streams real-format audio without a fake student answer", async ({
+  page,
+}) => {
+  await service(page);
+  await page.route("**/api/voice/config", (r) =>
+    r.fulfill({
+      json: {
+        ...config,
+        capabilities: { lessonSpeech: true, teacherOpening: true },
+      },
+    }),
+  );
+  let opening = "",
+    calls: { type: string; text?: string }[] = [];
+  await page.route("**/api/voice/ticket", (r) => {
+    opening = r.request().postDataJSON().openingText;
+    return r.fulfill({ json: { ticket: "lesson-test-ticket" } });
+  });
+  let relay: import("@playwright/test").WebSocketRoute;
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
+    relay = ws;
+    ws.onMessage((raw) => {
+      const e = JSON.parse(String(raw));
+      if (e.type !== "audio") calls.push(e);
+    });
+    ws.send(JSON.stringify({ type: "ready" }));
+  });
+  await openExercise(page);
+  await page
+    .getByRole("button", { name: "请 Emma 朗读课堂提问", exact: true })
+    .click();
+  await expect.poll(() => opening).toBe("Can you find the dog?");
+  await expect(
+    page.getByRole("button", { name: "断开语音", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "请 Emma 朗读课堂提问", exact: true })
+    .click();
+  await expect
+    .poll(() => calls.find((e) => e.type === "lesson-speech")?.text)
+    .toBe("Can you find the dog?");
+  relay!.send(JSON.stringify({ type: "response-started" }));
+  relay!.send(
+    JSON.stringify({
+      type: "audio",
+      id: "lesson-reading",
+      audio: Buffer.alloc(48000, 10).toString("base64"),
+    }),
+  );
+  relay!.send(
+    JSON.stringify({
+      type: "subtitle",
+      speaker: "Emma",
+      id: "lesson-reading",
+      text: "Can you find the dog?",
+      final: true,
+    }),
+  );
+  relay!.send(JSON.stringify({ type: "audio-complete", id: "lesson-reading" }));
+  relay!.send(JSON.stringify({ type: "turn-ended" }));
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "Emma 正在说话",
+  );
+  await expect(page.getByLabel("Emma语音回听")).toBeVisible();
+  await expect(page.locator(".message-voice-clip")).toHaveCount(1);
+  expect(
+    calls.every((e) => ["context", "lesson-speech"].includes(e.type)),
+  ).toBeTruthy();
+  relay!.send(JSON.stringify({ type: "response-started" }));
+  relay!.send(JSON.stringify({ type: "turn-ended" }));
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "未收到 Emma 的语音",
+  );
+  await page.getByRole("tab", { name: "学习提示", exact: true }).click();
+  await page.locator(".vocab-list button").filter({ hasText: "bird" }).click();
+  await expect
+    .poll(() => calls.filter((e) => e.type === "lesson-speech").at(-1)?.text)
+    .toBe("bird");
+  await goToStage(page, 5);
+  await page
+    .getByRole("button", { name: "I like birds.", exact: true })
+    .click();
+  await expect
+    .poll(() => calls.filter((e) => e.type === "lesson-speech").at(-1)?.text)
+    .toBe("I like birds.");
+});
+
+test("footer microphone starts real dialogue and a server notice preserves the classroom session", async ({
+  page,
+}) => {
+  await service(page);
+  let relay: import("@playwright/test").WebSocketRoute;
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
+    relay = ws;
+    ws.onMessage(() => {});
+    ws.send(JSON.stringify({ type: "ready" }));
+  });
+  await openReady(page);
+  await page
+    .getByRole("button", { name: "开始与 Emma 语音对话", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "断开真实语音", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "已连接",
+  );
+  relay!.send(
+    JSON.stringify({
+      type: "notice",
+      message: "Emma 正在回答，请等她说完再点击。",
+    }),
+  );
+  await expect(page.locator(".voice-caption")).toContainText("Emma 正在回答");
+  await expect(
+    page.getByRole("button", { name: "断开语音", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "断开语音", exact: true }).click();
+  await page
+    .getByRole("button", { name: "开始与 Emma 语音对话", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "断开语音", exact: true }),
+  ).toBeVisible();
+});
+
+test("old deployed relay never receives unsupported lesson controls or a fake playback state", async ({
+  page,
+}) => {
+  await service(page);
+  let controls: string[] = [];
+  await page.routeWebSocket("**/api/voice/socket?*", (ws) => {
+    ws.onMessage((raw) => controls.push(JSON.parse(String(raw)).type));
+    ws.send(JSON.stringify({ type: "ready" }));
+  });
+  await openExercise(page);
+  await page.getByRole("button", { name: "开始语音", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "断开语音", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "请 Emma 朗读课堂提问", exact: true })
+    .click();
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "暂不支持课件朗读",
+  );
+  expect(controls).not.toContain("lesson-speech");
+  await expect(page.getByLabel("Emma语音回听")).toHaveCount(0);
+});
+
+test("temporary service wake-up failure is retryable and is not labelled missing configuration", async ({
+  page,
+}) => {
+  await service(page);
+  let unavailable = true;
+  await page.route("**/api/voice/config", (r) =>
+    unavailable ? r.abort("connectionreset") : r.fulfill({ json: config }),
+  );
+  await openReady(page);
+  await expect(
+    page.getByRole("button", { name: "重试语音服务", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("combobox", { name: "实时语音模型" })
+      .locator("option")
+      .first(),
+  ).toContainText("待连接");
+  unavailable = false;
+  await page.getByRole("button", { name: "重试语音服务", exact: true }).click();
+  await expect(page.locator(".voice-connection-status")).toContainText(
+    "语音服务已就绪",
+  );
+  await expect(
+    page.getByRole("button", { name: "开始语音", exact: true }),
+  ).toBeEnabled();
 });

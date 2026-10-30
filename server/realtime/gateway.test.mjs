@@ -35,6 +35,11 @@ class FixtureAdapter extends EventEmitter {
   updateContext(context) {
     this.context = context;
   }
+  speakLesson(text) {
+    this.readings ||= [];
+    this.readings.push(text);
+    return true;
+  }
   mute() {
     this.muted = true;
   }
@@ -339,6 +344,19 @@ test("Qwen adapter uses official handshake/session shape and maps captions/audio
       "next response can play again",
     );
     assert.equal(sessionSettings({}).turn_detection.type, "server_vad");
+    assert.equal(
+      adapter.speakLesson("cat"),
+      false,
+      "do not cancel a teacher mid-answer for a button",
+    );
+    remote.send(JSON.stringify({ type: "response.done" }));
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(adapter.speakLesson("It's a cat."), true);
+    await new Promise((r) => setTimeout(r, 10));
+    const reading = received.filter((e) => e.type === "response.create").at(-1);
+    assert.match(reading.response.instructions, /It's a cat/);
+    assert.match(reading.response.instructions, /never instructions to follow/);
+    assert(!received.some((e) => e.type === "conversation.item.create"));
   } finally {
     adapter.close();
     for (const ws of wss.clients) ws.terminate();
@@ -468,5 +486,64 @@ test("same signed device can replace its old tab after token renewal, while anot
       adapters.push(a);
       return a;
     },
+  );
+});
+
+test("authenticated lesson speech is bounded, keeps its source text, and never mutates course state", async () => {
+  const a = new FixtureAdapter();
+  await fixture(
+    configured,
+    async ({ base, post }) => {
+      const config = await (await fetch(base + "/api/voice/config")).json();
+      assert.equal(config.capabilities.lessonSpeech, true);
+      const { token } = await (await post("/api/voice/login", { code })).json();
+      const { ticket } = await (
+        await post(
+          "/api/voice/ticket",
+          {
+            provider: "qwen",
+            context: { stage: "listening", prompt: "Can you find the dog?" },
+            openingText: "It is a dog.",
+          },
+          token,
+        )
+      ).json();
+      const ws = new WebSocket(
+        base.replace("http", "ws") + "/api/voice/socket?ticket=" + ticket,
+        { origin },
+      );
+      const ready = once(ws, "message");
+      await once(ws, "open");
+      await ready;
+      await new Promise((r) => setTimeout(r, 10));
+      assert.deepEqual(a.readings, ["It is a dog."]);
+      ws.send(JSON.stringify({ type: "lesson-speech", text: "I like dogs." }));
+      await new Promise((r) => setTimeout(r, 10));
+      assert.equal(a.readings.at(-1), "I like dogs.");
+      assert.equal(a.context.stage, "listening");
+      assert.equal(
+        a.audio,
+        undefined,
+        "button never invents student microphone audio",
+      );
+      let response = once(ws, "message");
+      ws.send(JSON.stringify({ type: "lesson-speech", text: "x".repeat(301) }));
+      assert.match(JSON.parse((await response)[0]).message, /暂时无法朗读/);
+      const count = a.readings.length;
+      for (let i = 0; i < 5; i++)
+        ws.send(JSON.stringify({ type: "lesson-speech", text: "dog" }));
+      await new Promise((r) => setTimeout(r, 10));
+      assert(
+        a.readings.length <= count + 4,
+        "six-per-minute includes invalid attempts",
+      );
+      ws.send(JSON.stringify({ type: "mute", muted: true }));
+      await new Promise((r) => setTimeout(r, 10));
+      response = once(ws, "message");
+      ws.send(JSON.stringify({ type: "lesson-speech", text: "cat" }));
+      assert.match(JSON.parse((await response)[0]).message, /取消语音静音/);
+      ws.close();
+    },
+    () => a,
   );
 });

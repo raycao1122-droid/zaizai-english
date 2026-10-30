@@ -24,6 +24,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   private timer?: ReturnType<typeof setTimeout>;
   private onEvent?: (event: VoiceEvent) => void;
   private acceptingAudio = true;
+  private responseHasAudio = false;
   private sending = false;
   private replaying = false;
   private heldAudio: string[] = [];
@@ -140,6 +141,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
         ticket = await api(options.base, "/api/voice/ticket", accessToken, {
           provider: "qwen",
           context: options.context,
+          openingText: options.openingText,
         });
       } catch (error) {
         if (
@@ -152,6 +154,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
         ticket = await api(options.base, "/api/voice/ticket", renewed, {
           provider: "qwen",
           context: options.context,
+          openingText: options.openingText,
         });
       }
       if (this.closed) return;
@@ -234,8 +237,19 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
             this.finishInput(e.id);
           if (e.type === "response-started") {
             this.acceptingAudio = true;
+            this.responseHasAudio = false;
             this.outputItemId = undefined;
           }
+          if (
+            e.type === "turn-ended" &&
+            this.acceptingAudio &&
+            !this.muted &&
+            !this.responseHasAudio
+          )
+            this.onEvent?.({
+              type: "notice",
+              message: "这次未收到 Emma 的语音，请再说一句，或断开后重新连接。",
+            });
           if (
             e.type === "audio" &&
             e.audio &&
@@ -243,6 +257,7 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
             this.acceptingAudio
           ) {
             try {
+              this.responseHasAudio = true;
               const bytes = decodePcm(e.audio),
                 id = e.id || this.outputItemId || "current";
               const segment = this.outputSegments.get(id) || {
@@ -464,6 +479,9 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   }
   updateContext(context: VoiceContext) {
     this.send({ type: "context", context });
+  }
+  speakLesson(text: string) {
+    this.send({ type: "lesson-speech", text });
   }
   disconnect() {
     if (this.closed) return;

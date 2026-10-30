@@ -14,11 +14,15 @@ function DemoWave({ pink = false }: { pink?: boolean }) {
 }
 
 export function PronunciationFeedback({
+  realAudio,
+  voiceConnected,
   attempts,
   paused,
   onRetry,
   onAudio,
 }: {
+  realAudio?: boolean;
+  voiceConnected?: boolean;
   attempts: number;
   paused: boolean;
   onRetry: () => void;
@@ -31,14 +35,18 @@ export function PronunciationFeedback({
     >
       <div className="activity-heading">
         <span className="stage-kicker">LET’S SAY IT TOGETHER</span>
-        <span className="simulation-label">模拟示例 · 未录音 / 未评分</span>
+        <span className="simulation-label">
+          {voiceConnected
+            ? "纠音反馈为模拟 · 未评分"
+            : "模拟示例 · 未录音 / 未评分"}
+        </span>
       </div>
       <div className="pronunciation-word">
         <span>cat</span>
         <span className="phonetic">/kæt/</span>
         <button
           className="audio-button"
-          aria-label="模拟播放 cat 示范"
+          aria-label={realAudio ? "请 Emma 朗读 cat 示范" : "模拟播放 cat 示范"}
           onClick={onAudio}
         >
           <Volume2 size={23} />

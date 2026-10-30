@@ -164,7 +164,14 @@ export default function App() {
   function audio() {
     if (!state.paused && !state.muted)
       dispatch({ type: "voice", value: "speaking" });
-    setToast("音频播放状态模拟：尚未接入音频或语音 API。");
+    setToast("这段演示内容尚无音频；真实对话请使用「开始语音」。");
+  }
+
+  function lessonAudio(text?: string) {
+    if (state.paused || aiBusy) return;
+    if (realtime.selectedProvider.configured) {
+      realtime.speakLesson(text || context.prompt);
+    } else audio();
   }
 
   function navigate(index: number, historicalSession?: MockSession) {
@@ -295,6 +302,7 @@ export default function App() {
                 <ClassroomActivities
                   state={state}
                   voiceConnected={realtime.status === "connected"}
+                  voiceAvailable={realtime.selectedProvider.configured}
                   onSelect={(animal) => {
                     dispatch({ type: "select", animal });
                     if (context.step.id !== "vocabulary")
@@ -305,7 +313,7 @@ export default function App() {
                       );
                   }}
                   onAnswer={(text) => dispatch({ type: "answer", text })}
-                  onAudio={audio}
+                  onAudio={lessonAudio}
                   onHint={() => dispatch({ type: "hint" })}
                   onRetry={() => dispatch({ type: "retry" })}
                   onQuestion={() => dispatch({ type: "question" })}
@@ -342,7 +350,7 @@ export default function App() {
               onCollapse={() =>
                 dispatch({ type: "patch", patch: { collapsed: true } })
               }
-              onAudio={audio}
+              onAudio={lessonAudio}
               onSend={sendAnswer}
             />
             {state.paused && (
@@ -357,6 +365,18 @@ export default function App() {
           </main>
           <VoiceControlBar
             voice={voice}
+            onConnectVoice={
+              !voiceActive &&
+              (realtime.selectedProvider.configured || realtime.catalogError)
+                ? () => void realtime.connect()
+                : undefined
+            }
+            connectBlocked={state.paused || aiBusy || realtime.loading}
+            connectMessage={
+              realtime.status === "error" || realtime.catalogError
+                ? realtime.message
+                : undefined
+            }
             realVoice={
               voiceActive
                 ? {

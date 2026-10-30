@@ -23,9 +23,10 @@ import { PronunciationFeedback } from "./PronunciationFeedback";
 type Props = {
   state: ClassroomState;
   voiceConnected?: boolean;
+  voiceAvailable?: boolean;
   onSelect: (animal: AnimalId) => void;
   onAnswer: (answer: string) => void;
-  onAudio: () => void;
+  onAudio: (text?: string) => void;
   onHint: () => void;
   onRetry: () => void;
   onQuestion: () => void;
@@ -39,19 +40,21 @@ function Prompt({
   translation,
   showTranslation,
   onAudio,
+  realAudio,
 }: {
+  realAudio?: boolean;
   title: string;
   translation: string;
   showTranslation: boolean;
-  onAudio: () => void;
+  onAudio: (text?: string) => void;
 }) {
   return (
     <div className="activity-prompt">
       <h1>{title}</h1>
       <button
         className="audio-button"
-        onClick={onAudio}
-        aria-label="模拟播放课堂提问"
+        onClick={() => onAudio(title)}
+        aria-label={realAudio ? "请 Emma 朗读课堂提问" : "模拟播放课堂提问"}
       >
         <Volume2 size={23} />
       </button>
@@ -81,8 +84,10 @@ export function ClassroomActivities(props: Props) {
           <h1>{context.prompt}</h1>
           <button
             className="audio-button"
-            aria-label="模拟播放课堂提问"
-            onClick={onAudio}
+            aria-label={
+              props.voiceAvailable ? "请 Emma 朗读课堂提问" : "模拟播放课堂提问"
+            }
+            onClick={() => onAudio(context.prompt)}
           >
             <Volume2 size={26} />
           </button>
@@ -144,7 +149,9 @@ export function ClassroomActivities(props: Props) {
         attempts={state.retries}
         paused={state.paused}
         onRetry={props.onRetry}
-        onAudio={onAudio}
+        onAudio={() => onAudio("cat")}
+        realAudio={props.voiceAvailable}
+        voiceConnected={props.voiceConnected}
       />
     );
 
@@ -260,6 +267,7 @@ export function ClassroomActivities(props: Props) {
           translation={context.translation}
           showTranslation={showTranslation}
           onAudio={onAudio}
+          realAudio={props.voiceAvailable}
         />
         <div className={`featured-animal animal-${animal.id}`}>
           <img src={animal.image} alt={animal.id} />
@@ -267,8 +275,12 @@ export function ClassroomActivities(props: Props) {
             <strong>{animal.id}</strong>
             <button
               className="audio-button"
-              onClick={onAudio}
-              aria-label={`模拟播放 ${animal.id}`}
+              onClick={() => onAudio(animal.id)}
+              aria-label={
+                props.voiceAvailable
+                  ? `请 Emma 朗读 ${animal.id}`
+                  : `模拟播放 ${animal.id}`
+              }
             >
               <Volume2 size={23} />
             </button>
@@ -291,7 +303,9 @@ export function ClassroomActivities(props: Props) {
             ))}
         </div>
         <p className="stage-footnote">
-          选择图片切换示例单词；音频按钮只切换状态。
+          {props.voiceAvailable
+            ? "选择图片切换示例单词；点击扬声器请 Emma 朗读。"
+            : "选择图片切换示例单词；音频按钮只切换状态。"}
         </p>
       </div>
     );
@@ -305,6 +319,7 @@ export function ClassroomActivities(props: Props) {
           translation={context.translation}
           showTranslation={showTranslation}
           onAudio={onAudio}
+          realAudio={props.voiceAvailable}
         />
         <img
           className="greeting-avatar"
@@ -330,7 +345,9 @@ export function ClassroomActivities(props: Props) {
           </p>
         )}
         <p className="stage-footnote">
-          点击一个预设回答，演示自然问候；未进行语音识别。
+          {props.voiceConnected
+            ? "预设按钮仅记录本页选择；真实语音与字幕显示在课堂对话中。"
+            : "点击一个预设回答，演示自然问候；未进行语音识别。"}
         </p>
       </div>
     );
@@ -344,6 +361,7 @@ export function ClassroomActivities(props: Props) {
           translation={context.translation}
           showTranslation={showTranslation}
           onAudio={onAudio}
+          realAudio={props.voiceAvailable}
         />
         <div className="sentence-picture">
           <img src={assetUrl("bird.svg")} alt="bird" />
@@ -357,7 +375,10 @@ export function ClassroomActivities(props: Props) {
               disabled={state.paused}
               className={state.sentence === answer ? "chosen" : ""}
               aria-pressed={state.sentence === answer}
-              onClick={() => onAnswer(answer)}
+              onClick={() => {
+                onAnswer(answer);
+                if (props.voiceAvailable) onAudio(answer);
+              }}
             >
               <Volume2 size={16} />
               {answer}
@@ -379,6 +400,7 @@ export function ClassroomActivities(props: Props) {
           translation={context.translation}
           showTranslation={showTranslation}
           onAudio={onAudio}
+          realAudio={props.voiceAvailable}
         />
         <p className="scenario-invitation">
           Tell Emma a little about your pets.

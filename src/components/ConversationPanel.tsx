@@ -54,7 +54,7 @@ export function ConversationPanel({
   onDraftChange: (draft: string) => void;
   onNotesChange: (notes: string) => void;
   onCollapse: () => void;
-  onAudio: () => void;
+  onAudio: (text?: string) => void;
   onSend: (text: string) => void | boolean | Promise<boolean>;
 }) {
   const end = useRef<HTMLDivElement>(null);
@@ -94,9 +94,11 @@ export function ConversationPanel({
               (realtime.status === "connected" ||
                 realtime.status === "connecting")
                 ? " · 会话中"
-                : p.configured
-                  ? ""
-                  : " · 未配置"}
+                : realtime.loading || realtime.catalogError
+                  ? " · 待连接"
+                  : p.configured
+                    ? ""
+                    : " · 未配置"}
             </option>
           ))}
         </select>
@@ -172,9 +174,11 @@ export function ConversationPanel({
                 >
                   {realtime.loading
                     ? "正在准备语音…"
-                    : realtime.status === "error"
-                      ? "重新连接"
-                      : "开始语音"}
+                    : realtime.catalogError
+                      ? "重试语音服务"
+                      : realtime.status === "error"
+                        ? "重新连接"
+                        : "开始语音"}
                 </button>
               )}
             </div>
@@ -317,7 +321,7 @@ export function ConversationPanel({
             <h3>今天的动物单词</h3>
             <div className="vocab-list">
               {animals.map((a) => (
-                <button key={a.id} onClick={onAudio}>
+                <button key={a.id} onClick={() => onAudio(a.id)}>
                   <img src={a.image} alt="" />
                   <span>
                     {a.id}
@@ -327,7 +331,11 @@ export function ConversationPanel({
                 </button>
               ))}
             </div>
-            <p className="muted-copy">音频按钮仅演示播放状态。</p>
+            <p className="muted-copy">
+              {realtime.selectedProvider.configured
+                ? "点击单词，请 Emma 朗读；首次使用需允许麦克风。"
+                : "音频按钮仅演示播放状态。"}
+            </p>
           </div>
         )}
         {tab === "notes" && (

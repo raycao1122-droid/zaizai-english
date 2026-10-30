@@ -2,6 +2,13 @@ import { test, expect, type Page } from "@playwright/test";
 
 import { openExercise as openClass, goToStage } from "./helpers";
 
+// These historical M1 flows deliberately exercise the standalone, unconfigured demo.
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/voice/config", (r) =>
+    r.fulfill({ json: { providers: [] } }),
+  );
+});
+
 async function closeToast(page: Page) {
   const close = page.getByRole("button", { name: "关闭状态提示" });
   if (await close.isVisible()) await close.click();
@@ -306,7 +313,7 @@ test("settings translation and text answers are local and explicit", async ({
     "Let’s try one of the example answers on the lesson card.",
   );
   await page.getByRole("button", { name: "模拟播放课堂提问" }).click();
-  await expect(page.locator(".toast")).toContainText("尚未接入音频或语音 API");
+  await expect(page.locator(".toast")).toContainText("这段演示内容尚无音频");
 });
 
 test("M1 refinement: notes and unsent answer survive exit and reentry", async ({

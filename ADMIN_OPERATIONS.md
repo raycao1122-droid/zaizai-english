@@ -41,3 +41,7 @@ Render 模板保持 Free，并切换为在提交更新后自动部署，方便�
 ## 连续语音开场与自动回答
 
 新版中转连接后按官方 SDK 协议请求真实教师开场，参见 LIVE_CONVERSATION_FIX.md。课堂回听不再触发清空上句话的 mute，模型回复会等待本地回听结束后自动续播。需要更新既有中转代码；只发布 Pages 不能让旧中转产生主动开场。核对 X-Classroom-Revision 是否为新提交，再实测真实语音，不需要重填 Key。
+
+## 课堂扬声器真实朗读与部署核对
+
+2026-10-30增量见 VOICE_CLASSROOM_INTEGRATION.md。新增capabilities只说明协议功能，不返回密钥或管理员资料。新前端避免向旧中转发送未实现的lesson-speech；朗读需要既有服务运行新提交。Render Settings核对Branch为main，Auto-Deploy为On Commit，然后在服务页Manual Deploy → Deploy latest commit，等Live后核对实际运行版本。若只改了Blueprint设置但未同步，不能当作自动部署已生效。新教材方案见 MATERIAL_PREPARATION_PLAN.md，目前没有上传或解析。

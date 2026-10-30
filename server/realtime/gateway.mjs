@@ -48,8 +48,8 @@ export function createVoiceGateway(
     env.CLASSROOM_HOST === "0.0.0.0" || env.NODE_ENV === "production";
   const hasAccess = Boolean(
     env.CLASSROOM_ACCESS_CODE &&
-      env.CLASSROOM_ACCESS_CODE.length >= 16 &&
-      env.CLASSROOM_ACCESS_CODE.length <= 128,
+    env.CLASSROOM_ACCESS_CODE.length >= 16 &&
+    env.CLASSROOM_ACCESS_CODE.length <= 128,
   );
   const access = createClassroomAccess(
     env.CLASSROOM_ACCESS_CODE || randomBytes(32).toString("hex"),
@@ -224,6 +224,7 @@ export function createVoiceGateway(
       if (req.method === "GET" && req.url === "/api/voice/config") {
         const data = providers();
         json(res, 200, {
+          capabilities: { teacherOpening: true, lessonSpeech: true },
           providers: data.providers.map(
             ({ id, name, configured, status, implemented }) => ({
               id,
@@ -377,6 +378,10 @@ export function createVoiceGateway(
           expires: Date.now() + 30000,
           token,
           context: safeContext(input.context),
+          openingText:
+            typeof input.openingText === "string"
+              ? input.openingText.slice(0, 300)
+              : "",
           origin: req.headers.origin,
         });
         json(res, 200, { ticket });
@@ -496,6 +501,25 @@ export function createVoiceGateway(
             muted = e.muted;
             lastAudioAt = Date.now();
             adapter.mute();
+          } else if (e.type === "lesson-speech" && live) {
+            if (muted)
+              send({
+                type: "notice",
+                message: "请先取消语音静音，再请 Emma 讲解。",
+              });
+            else if (!rate("lesson-speech:" + owner, 6))
+              send({ type: "notice", message: "请稍等一下，再请 Emma 讲解。" });
+            else if (
+              typeof e.text !== "string" ||
+              !e.text.trim() ||
+              e.text.length > 300
+            )
+              send({ type: "notice", message: "这段课堂文字暂时无法朗读。" });
+            else if (!adapter.speakLesson?.(e.text))
+              send({
+                type: "notice",
+                message: "Emma 正在回答，请等她说完再点击。",
+              });
           } else if (e.type === "disconnect") end();
           else if (!["audio", "context"].includes(e.type))
             end("不支持的语音控制请求。");
@@ -510,7 +534,8 @@ export function createVoiceGateway(
           live = true;
           lastAudioAt = Date.now();
           send({ type: "ready" });
-          adapter.startGreeting?.();
+          if (grant.openingText) adapter.speakLesson?.(grant.openingText);
+          else adapter.startGreeting?.();
         })
         .catch((error) => end(error.message));
     });
