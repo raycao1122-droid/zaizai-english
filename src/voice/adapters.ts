@@ -480,6 +480,9 @@ export class QwenRealtimeAdapter implements RealtimeVoiceService {
   updateContext(context: VoiceContext) {
     this.send({ type: "context", context });
   }
+  teachStage() {
+    this.send({ type: "teach-stage" });
+  }
   speakLesson(text: string) {
     this.send({ type: "lesson-speech", text });
   }

@@ -1,0 +1,276 @@
+{
+  "courseId": "zaizai-english-l1",
+  "unitId": "unit-01",
+  "title": "Hello! This Is Me.",
+  "version": "1.0-original-draft",
+  "status": "curriculum-content-only-not-connected",
+  "language": "en-CN",
+  "level": "A0-to-PreA1",
+  "durationMinutesPerLesson": 20,
+  "lessonCount": 4,
+  "teacherGuide": "Emma_Teacher_Guide.md",
+  "studentBook": "Zaizai_English_Unit1_StudentBook.pdf",
+  "modelProvider": "adapter-independent",
+  "capabilityNotice": "Lesson plan and assets only. No PDF parsing or live teaching connection implied.",
+  "assets": [
+    "assets/emma_greeting.png",
+    "assets/school_friends.png",
+    "assets/conversation.png",
+    "assets/birthday.png",
+    "assets/school_welcome.png"
+  ],
+  "lessons": [
+    {
+      "id": "L1",
+      "title": "Hello, Emma!",
+      "durationRangeMinutes": [
+        15,
+        25
+      ],
+      "defaultDurationMinutes": 20,
+      "vocabulary": [
+        "hello",
+        "hi",
+        "name",
+        "meet",
+        "friend"
+      ],
+      "coreExpressions": [
+        "Hello!",
+        "What’s your name?",
+        "I’m Zaizai.",
+        "Nice to meet you."
+      ],
+      "sceneImage": "assets/emma_greeting.png",
+      "stages": [
+        {
+          "id": "warmup",
+          "minutes": 3,
+          "intent": "review_and_diagnose"
+        },
+        {
+          "id": "context",
+          "minutes": 5,
+          "intent": "scene_based_input",
+          "asset": "assets/emma_greeting.png"
+        },
+        {
+          "id": "practice",
+          "minutes": 5,
+          "intent": "scaffolded_retrieval"
+        },
+        {
+          "id": "mission",
+          "minutes": 5,
+          "intent": "independent_transfer"
+        },
+        {
+          "id": "wrap",
+          "minutes": 2,
+          "intent": "evidence_based_summary"
+        }
+      ],
+      "hintLevels": [
+        "H0_independent",
+        "H1_visual_or_keyword",
+        "H2_sentence_stem",
+        "H3_full_model"
+      ],
+      "passRule": {
+        "independentCorrectAcrossDistinctContexts": 2,
+        "mustLogStudentUtterance": true
+      },
+      "teacherScriptsAreExamplesNotFixed": true
+    },
+    {
+      "id": "L2",
+      "title": "I’m Nine!",
+      "durationRangeMinutes": [
+        15,
+        25
+      ],
+      "defaultDurationMinutes": 20,
+      "vocabulary": [
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+        "eleven",
+        "twelve"
+      ],
+      "coreExpressions": [
+        "How old are you?",
+        "I’m nine.",
+        "Are you ten?",
+        "No, I’m not."
+      ],
+      "sceneImage": "assets/birthday.png",
+      "stages": [
+        {
+          "id": "warmup",
+          "minutes": 3,
+          "intent": "review_and_diagnose"
+        },
+        {
+          "id": "context",
+          "minutes": 5,
+          "intent": "scene_based_input",
+          "asset": "assets/birthday.png"
+        },
+        {
+          "id": "practice",
+          "minutes": 5,
+          "intent": "scaffolded_retrieval"
+        },
+        {
+          "id": "mission",
+          "minutes": 5,
+          "intent": "independent_transfer"
+        },
+        {
+          "id": "wrap",
+          "minutes": 2,
+          "intent": "evidence_based_summary"
+        }
+      ],
+      "hintLevels": [
+        "H0_independent",
+        "H1_visual_or_keyword",
+        "H2_sentence_stem",
+        "H3_full_model"
+      ],
+      "passRule": {
+        "independentCorrectAcrossDistinctContexts": 2,
+        "mustLogStudentUtterance": true
+      },
+      "teacherScriptsAreExamplesNotFixed": true
+    },
+    {
+      "id": "L3",
+      "title": "Meet My Friend",
+      "durationRangeMinutes": [
+        15,
+        25
+      ],
+      "defaultDurationMinutes": 20,
+      "vocabulary": [
+        "boy",
+        "girl",
+        "friend",
+        "he",
+        "she",
+        "his",
+        "her"
+      ],
+      "coreExpressions": [
+        "This is my friend.",
+        "He is Leo.",
+        "She is Mia.",
+        "His name is Leo.",
+        "Her name is Mia."
+      ],
+      "sceneImage": "assets/school_friends.png",
+      "stages": [
+        {
+          "id": "warmup",
+          "minutes": 3,
+          "intent": "review_and_diagnose"
+        },
+        {
+          "id": "context",
+          "minutes": 5,
+          "intent": "scene_based_input",
+          "asset": "assets/school_friends.png"
+        },
+        {
+          "id": "practice",
+          "minutes": 5,
+          "intent": "scaffolded_retrieval"
+        },
+        {
+          "id": "mission",
+          "minutes": 5,
+          "intent": "independent_transfer"
+        },
+        {
+          "id": "wrap",
+          "minutes": 2,
+          "intent": "evidence_based_summary"
+        }
+      ],
+      "hintLevels": [
+        "H0_independent",
+        "H1_visual_or_keyword",
+        "H2_sentence_stem",
+        "H3_full_model"
+      ],
+      "passRule": {
+        "independentCorrectAcrossDistinctContexts": 2,
+        "mustLogStudentUtterance": true
+      },
+      "teacherScriptsAreExamplesNotFixed": true
+    },
+    {
+      "id": "L4",
+      "title": "My First English Chat",
+      "durationRangeMinutes": [
+        15,
+        25
+      ],
+      "defaultDurationMinutes": 20,
+      "vocabulary": [],
+      "coreExpressions": [
+        "What’s your name?",
+        "How old are you?",
+        "This is my friend.",
+        "Nice to meet you!"
+      ],
+      "sceneImage": "assets/conversation.png",
+      "stages": [
+        {
+          "id": "warmup",
+          "minutes": 3,
+          "intent": "review_and_diagnose"
+        },
+        {
+          "id": "context",
+          "minutes": 5,
+          "intent": "scene_based_input",
+          "asset": "assets/conversation.png"
+        },
+        {
+          "id": "practice",
+          "minutes": 5,
+          "intent": "scaffolded_retrieval"
+        },
+        {
+          "id": "mission",
+          "minutes": 5,
+          "intent": "independent_transfer"
+        },
+        {
+          "id": "wrap",
+          "minutes": 2,
+          "intent": "evidence_based_summary"
+        }
+      ],
+      "hintLevels": [
+        "H0_independent",
+        "H1_visual_or_keyword",
+        "H2_sentence_stem",
+        "H3_full_model"
+      ],
+      "passRule": {
+        "independentCorrectAcrossDistinctContexts": 2,
+        "mustLogStudentUtterance": true
+      },
+      "teacherScriptsAreExamplesNotFixed": true
+    }
+  ]
+}

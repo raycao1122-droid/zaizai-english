@@ -1,0 +1,42 @@
+{
+  "Zaizai_English_Unit1_Reading_Copy.pdf": {
+    "sha256": "3e6b430626619f6e4a19363351c431649e74a0e4876e034a694fe2ad688a4cfb",
+    "bytes": 1854650
+  },
+  "Emma_Teacher_Guide.md": {
+    "sha256": "f8480e3b4412dc30eb82d9957becb0e9426c829076df8e177d7977d4d16d2770",
+    "bytes": 4663
+  },
+  "unit1_course.json": {
+    "sha256": "b8c33fde868a14041b51e849edc86905d098c62e2afe7fb9da15386e88c97530",
+    "bytes": 6480
+  },
+  "Zaizai_English_Unit1_StudentBook.pdf": {
+    "sha256": "71e3e26f59486287f0823ce667d07672a0c3d65a77837a93fa434e9db2cae8c7",
+    "bytes": 1883008
+  },
+  "README.md": {
+    "sha256": "593c12946dba9e88304f69e43b57309f211e5d7ef45134fb165035422d328890",
+    "bytes": 886
+  },
+  "assets/school_welcome.png": {
+    "sha256": "cbd894e7e4817e0922c3a42b60f1fd8ca9b0b17e4071da7fb8588b68ff91f83f",
+    "bytes": 334449
+  },
+  "assets/birthday.png": {
+    "sha256": "e18933c0a97f99a3ef3932dd46c5909c8312b0fc6a65ae39a6f607763a0bce8a",
+    "bytes": 191694
+  },
+  "assets/conversation.png": {
+    "sha256": "712dbf9014b5bc3ff8f45587e3fa8e45e1ef70fab4ae8003e5b17cc27f3f3446",
+    "bytes": 178047
+  },
+  "assets/school_friends.png": {
+    "sha256": "1aff8a8009e3df0d5099d25077bae5708dab88867b47bb04915e52f2772e1e5b",
+    "bytes": 156892
+  },
+  "assets/emma_greeting.png": {
+    "sha256": "2042334b6fa5613f8a2c7569dd09ca90e56944005c27a1ded7c0856bea9b704f",
+    "bytes": 165888
+  }
+}

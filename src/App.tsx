@@ -7,6 +7,15 @@ import {
   Play,
   Settings2,
 } from "lucide-react";
+import { useUnitCourse } from "./hooks/useUnitCourse";
+import { UnitCourseStage } from "./components/UnitCourseStage";
+import {
+  unitCourse,
+  unitLesson,
+  unitTeaching,
+  unitStages,
+  type UnitLessonId,
+} from "./data/unit1";
 import { Header } from "./components/Header";
 import { EmmaAvatar } from "./components/EmmaAvatar";
 import { LessonStage } from "./components/LessonStage";
@@ -34,6 +43,10 @@ import { voiceCycle } from "./data/mockLesson";
 
 export default function App() {
   const { state, dispatch, context } = useClassroom();
+  const unit = useUnitCourse();
+  const classPaused = unit.id ? unit.paused : state.paused;
+  const unitInfo = unit.id ? unitLesson(unit.id) : null;
+  const unitPlan = unit.id ? unitTeaching.lessons[unit.id] : null;
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiStatus, setAiStatus] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -57,29 +70,54 @@ export default function App() {
   const [reportFromArchive, setReportFromArchive] = useState(false);
   const realtime = useRealtimeVoice({
     context: {
-      stage: context.step.title,
-      prompt: context.prompt,
-      target: context.target,
-      material:
-        materials.find((m) => m.id === librarySelection)?.name ||
-        "未选择；Animals 示例课堂",
-      choices: state.choices.length,
-      hints: state.hintRequests,
-      history: state.messages
+      ...(unit.id
+        ? {
+            curriculum: {
+              lessonId: unit.id,
+              stageId: unitStages[unit.progress.stage],
+              scenarioId: unit.progress.scenario,
+              hintLevel: unit.progress.hint,
+            },
+          }
+        : {}),
+      stage: unit.id
+        ? unitTeaching.stageLabels[unitStages[unit.progress.stage]]
+        : context.step.title,
+      prompt: unitPlan ? unitPlan.question : context.prompt,
+      target: unit.id || context.target,
+      material: unitInfo
+        ? `${unitCourse.title} / ${unitInfo.title}`
+        : materials.find((m) => m.id === librarySelection)?.name ||
+          "未选择；Animals 示例课堂",
+      choices: unit.id ? unit.data.checks.length : state.choices.length,
+      hints: unit.id ? 0 : state.hintRequests,
+      history: (unit.id ? unit.messages : state.messages)
         .slice(-8)
         .map((m) => ({ speaker: m.speaker, text: m.text })),
     },
-    onTranscript: (message) => dispatch({ type: "voice-message", message }),
+    onTranscript: (message) =>
+      unit.id
+        ? unit.message(message)
+        : dispatch({ type: "voice-message", message }),
+    onUtterance: (event) => {
+      if (unit.id && event.evidenceContext && event.text)
+        unit.record(
+          event.text,
+          "voice-asr",
+          `${event.evidenceContext.lessonId}:${event.id}`,
+          event.evidenceContext,
+        );
+    },
   });
   const voiceActive =
     realtime.status === "connected" || realtime.status === "connecting";
   useEffect(() => {
-    if ((state.paused || state.exited) && voiceActive)
+    if ((classPaused || state.exited) && voiceActive)
       realtime.disconnect(
         "课堂已暂停或退出，真实语音已断开；继续后请手动连接。",
       );
-  }, [state.paused, state.exited, voiceActive]);
-  const voice = state.paused
+  }, [classPaused, state.exited, voiceActive]);
+  const voice = classPaused
     ? "paused"
     : realtime.status === "connected"
       ? realtime.muted
@@ -89,7 +127,7 @@ export default function App() {
         ? "muted"
         : state.baseVoice;
   async function sendAnswer(text: string) {
-    if (voiceActive) return false;
+    if (voiceActive || unit.id) return false;
     if (!aiEnabled) {
       dispatch({ type: "answer", text });
       return true;
@@ -188,7 +226,30 @@ export default function App() {
     setToast("");
     return true;
   }
+  function selectUnit(id: UnitLessonId | null) {
+    realtime.disconnect("已切换课程，请点击开始学习。");
+    realtime.clearRecordings();
+    unit.select(id);
+    setModal(null);
+    if (state.exited) dispatch({ type: "resume" });
+  }
+  function startUnit() {
+    if (!unit.id) return;
+    unit.start();
+    if (state.paused) dispatch({ type: "pause" });
+    void realtime.connect();
+  }
+  function unitMove(stage: number) {
+    if (unit.paused) return;
+    realtime.disconnect("环节已切换，请点击请 Emma 开始本环节。");
+    unit.move(stage);
+  }
   function reset() {
+    if (unit.id) {
+      realtime.disconnect("课时已重新准备，已收到的记录保留。");
+      unit.restart();
+      return;
+    }
     realtime.disconnect("课堂已重置，真实语音已断开。");
     realtime.clearRecordings();
     aiRequest.current?.abort();
@@ -207,6 +268,12 @@ export default function App() {
     );
   }
   function headerNavigate(name: string) {
+    if (unit.id && name === "学习报告") {
+      setToast(
+        "第一单元真实记录在本课的学习记录中；原家长报告仍为 Animals 演示。",
+      );
+      return;
+    }
     if (name === "上课") {
       if (state.exited) dispatch({ type: "resume" });
       else if (state.step >= 9) navigate(state.lastLessonStep);
@@ -215,6 +282,12 @@ export default function App() {
     } else setModal(name);
   }
   function next() {
+    if (unit.id) {
+      if (unit.paused) return;
+      if (unit.progress.stage === 4) setModal("课程");
+      else unitMove(unit.progress.stage + 1);
+      return;
+    }
     if (state.paused) return;
     if (state.step === lessonSteps.length - 1) setModal("退出课堂");
     else navigate(state.step + 1);
@@ -256,6 +329,7 @@ export default function App() {
             className={`classroom-layout ${state.collapsed ? "panel-collapsed" : ""}`}
           >
             <EmmaAvatar
+              unitMode={!!unit.id}
               voice={voice}
               mood={state.mood}
               onMood={(mood) => {
@@ -271,14 +345,44 @@ export default function App() {
               onAudio={realtime.playLatestEmma}
             />
             <LessonStage
-              index={state.step}
+              unit={
+                unitInfo
+                  ? {
+                      title: unitInfo.title,
+                      stageLabel:
+                        unitTeaching.stageLabels[
+                          unitStages[unit.progress.stage]
+                        ],
+                      stage: unit.progress.stage,
+                    }
+                  : undefined
+              }
+              index={unit.id ? 0 : state.step}
               panelCollapsed={state.collapsed}
               onDirectory={() => setModal("课程目录")}
               onExpand={() =>
                 dispatch({ type: "patch", patch: { collapsed: false } })
               }
             >
-              {context.step.id === "parent-report" ? (
+              {unit.id ? (
+                <UnitCourseStage
+                  key={unit.id}
+                  unit={{
+                    ...unit,
+                    move: unitMove,
+                    change: (patch) => {
+                      if (unit.paused) return;
+                      realtime.disconnect(
+                        "教学情境或提示已切换，请重新开始本环节语音。",
+                      );
+                      unit.change(patch);
+                    },
+                  }}
+                  onStart={startUnit}
+                  onTeach={() => realtime.teachStage()}
+                  voiceStatus={realtime.message}
+                />
+              ) : context.step.id === "parent-report" ? (
                 <ParentLessonReport
                   key={reportSession.id}
                   session={reportSession}
@@ -327,9 +431,10 @@ export default function App() {
             </LessonStage>
             <ConversationPanel
               hidden={state.collapsed}
-              disabled={state.paused || aiBusy || voiceActive}
+              disabled={classPaused || aiBusy || voiceActive || !!unit.id}
               realtime={realtime}
-              voiceBlocked={state.paused || aiBusy}
+              courseMode={!!unit.id}
+              voiceBlocked={classPaused || aiBusy}
               isAi={aiEnabled}
               waiting={aiBusy}
               tab={state.panelTab}
@@ -344,7 +449,7 @@ export default function App() {
               onNotesChange={(notes) =>
                 dispatch({ type: "patch", patch: { notes } })
               }
-              messages={state.messages}
+              messages={unit.id ? unit.messages : state.messages}
               target={context.target}
               translate={state.translate || state.hint}
               onCollapse={() =>
@@ -353,7 +458,7 @@ export default function App() {
               onAudio={lessonAudio}
               onSend={sendAnswer}
             />
-            {state.paused && (
+            {!unit.id && state.paused && (
               <div className="pause-notice" role="status">
                 <Play size={22} />
                 <strong>课堂已暂停</strong>
@@ -371,7 +476,7 @@ export default function App() {
                 ? () => void realtime.connect()
                 : undefined
             }
-            connectBlocked={state.paused || aiBusy || realtime.loading}
+            connectBlocked={classPaused || aiBusy || realtime.loading}
             connectMessage={
               realtime.status === "error" || realtime.catalogError
                 ? realtime.message
@@ -390,21 +495,31 @@ export default function App() {
                 : undefined
             }
             muted={voiceActive ? realtime.muted : state.muted}
-            paused={state.paused}
+            paused={classPaused}
             speed={state.speed}
             nextLabel={
-              state.step === 0
-                ? "开始上课"
-                : state.step === 10
-                  ? "结束课堂"
-                  : "下一步"
+              unit.id
+                ? unit.progress.stage === 4
+                  ? "选择课时"
+                  : "下一环节"
+                : state.step === 0
+                  ? "开始上课"
+                  : state.step === 10
+                    ? "结束课堂"
+                    : "下一步"
             }
             onExit={() => setModal("退出课堂")}
             onCamera={() => setModal("摄像头")}
             onMute={() =>
               voiceActive ? realtime.toggleMute() : dispatch({ type: "mute" })
             }
-            onPause={() => dispatch({ type: "pause" })}
+            onPause={() =>
+              unit.id
+                ? unit.paused
+                  ? startUnit()
+                  : unit.setPaused(true)
+                : dispatch({ type: "pause" })
+            }
             onCycle={() =>
               dispatch({
                 type: "voice",
@@ -457,7 +572,13 @@ export default function App() {
                   <button
                     className="primary-button"
                     onClick={() => {
-                      reset();
+                      selectUnit(null);
+                      dispatch({ type: "reset" });
+                      aiRequest.current?.abort();
+                      setAiBusy(false);
+                      setReportSession(mockHistory[0]);
+                      setReportFromArchive(false);
+                      setArchiveView(createArchiveView());
                       setModal(null);
                     }}
                   >
@@ -465,7 +586,8 @@ export default function App() {
                   </button>
                 </div>
                 <p className="shelf-footer-note">
-                  从头演示会清空课堂草稿和笔记；选择教材不会生成课程。
+                  从头演示会清空 Animals
+                  草稿和笔记；第一单元可在已接入课时中选择，其他本地资料尚未解析。
                 </p>
               </>
             ) : undefined
@@ -546,6 +668,24 @@ export default function App() {
                 纠音、报告和档案仍为模拟内容。真实语音请点击「开始语音」；摄像头和学习档案同步尚未开放。
               </p>
             </>
+          ) : modal === "课程目录" && unit.id ? (
+            <>
+              <p>
+                第一单元四课 ·
+                当前课时环节可在中间切换。切换课时会暂停语音，已有记录保留。
+              </p>
+              <div className="directory-list">
+                {unitCourse.lessons.map((l) => (
+                  <button
+                    key={l.id}
+                    onClick={() => selectUnit(l.id as UnitLessonId)}
+                  >
+                    {l.id} · {l.title}
+                  </button>
+                ))}
+                <button onClick={() => selectUnit(null)}>Animals 示例课</button>
+              </div>
+            </>
           ) : modal === "课程目录" ? (
             <>
               <p className="muted-copy">
@@ -582,6 +722,7 @@ export default function App() {
             </>
           ) : modal === "课程" ? (
             <CurriculumLibrary
+              onLesson={selectUnit}
               recent={libraryRecent}
               selected={librarySelection}
               onSelect={setLibrarySelection}

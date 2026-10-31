@@ -1,3 +1,4 @@
+import type { UnitEvidenceContext } from "../data/unit1";
 export type ProviderId = "qwen" | "doubao" | "openai";
 export type Provider = {
   id: ProviderId;
@@ -30,6 +31,12 @@ export const defaultProviders: Provider[] = [
   },
 ];
 export type VoiceContext = {
+  curriculum?: {
+    lessonId: string;
+    stageId: string;
+    scenarioId: string;
+    hintLevel: string;
+  };
   stage: string;
   prompt: string;
   target: string;
@@ -46,6 +53,7 @@ export type VoiceEvent = {
   text?: string;
   final?: boolean;
   audio?: string;
+  evidenceContext?: UnitEvidenceContext;
   clip?: Blob;
   duration?: number;
   level?: number;
@@ -65,6 +73,7 @@ export interface RealtimeVoiceService {
   setReplay?(active: boolean): void;
   updateContext(context: VoiceContext): void;
   speakLesson?(text: string): void;
+  teachStage?(): void;
   recentRecording?(): { blob: Blob; duration: number } | null;
   resumeAudio?(): Promise<void>;
 }

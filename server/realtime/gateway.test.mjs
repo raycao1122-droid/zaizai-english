@@ -547,3 +547,72 @@ test("authenticated lesson speech is bounded, keeps its source text, and never m
     () => a,
   );
 });
+
+test("unit evidence stays attached to the actual speaking stage even when final ASR arrives after a context change", async () => {
+  const a = new FixtureAdapter();
+  await fixture(
+    configured,
+    async ({ base, post }) => {
+      const { token } = await (await post("/api/voice/login", { code })).json();
+      const initial = {
+        curriculum: {
+          lessonId: "L1",
+          stageId: "mission",
+          scenarioId: "school",
+          hintLevel: "H0",
+        },
+      };
+      const { ticket } = await (
+        await post(
+          "/api/voice/ticket",
+          { provider: "qwen", context: initial },
+          token,
+        )
+      ).json();
+      const ws = new WebSocket(
+        base.replace("http", "ws") + "/api/voice/socket?ticket=" + ticket,
+        { origin },
+      );
+      const ready = once(ws, "message");
+      await once(ws, "open");
+      await ready;
+      a.emit("event", {
+        type: "subtitle",
+        speaker: "Emma",
+        text: "What's your name?",
+        final: true,
+      });
+      a.emit("event", { type: "interrupted", id: "student-stage-one" });
+      ws.send(
+        JSON.stringify({
+          type: "context",
+          context: {
+            curriculum: {
+              lessonId: "L2",
+              stageId: "practice",
+              scenarioId: "birthday",
+              hintLevel: "H3",
+            },
+          },
+        }),
+      );
+      await new Promise((r) => setTimeout(r, 10));
+      const event = once(ws, "message");
+      a.emit("event", {
+        type: "subtitle",
+        speaker: "在在",
+        id: "student-stage-one",
+        text: "I'm Zaizai.",
+        final: true,
+      });
+      const e = JSON.parse((await event)[0]);
+      assert.equal(e.evidenceContext.lessonId, "L1");
+      assert.equal(e.evidenceContext.stageId, "mission");
+      assert.equal(e.evidenceContext.hintRequested, "H0");
+      assert.equal(e.evidenceContext.question, "What's your name?");
+      assert.equal(a.context.curriculum.lessonId, "L2");
+      ws.close();
+    },
+    () => a,
+  );
+});

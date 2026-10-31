@@ -28,6 +28,7 @@ export function ConversationPanel({
   waiting = false,
   realtime,
   voiceBlocked,
+  courseMode,
   tab,
   draft,
   notes,
@@ -47,6 +48,7 @@ export function ConversationPanel({
   waiting?: boolean;
   realtime: RealtimeVoice;
   voiceBlocked: boolean;
+  courseMode?: boolean;
   tab: PanelTab;
   draft: string;
   notes: string;
@@ -147,9 +149,11 @@ export function ConversationPanel({
             <div className="conversation-note">
               {realtime.status === "connected"
                 ? "真实语音 · 课件和报告仍为演示"
-                : isAi
-                  ? "AI 文字对话 · 课件和语音仍为演示"
-                  : "本地脚本对话 · 未接入 AI"}
+                : courseMode
+                  ? "第一单元教案教学 · 点击开始语音"
+                  : isAi
+                    ? "AI 文字对话 · 课件和语音仍为演示"
+                    : "本地脚本对话 · 未接入 AI"}
             </div>
             <div className="voice-session-tools">
               {realtime.status === "connected" ||
@@ -388,9 +392,11 @@ export function ConversationPanel({
               ? "Emma 正在思考…"
               : realtime.locked
                 ? "语音会话中，请直接说话"
-                : disabled
-                  ? "已暂停，继续课堂后发送"
-                  : "输入英文，练习回答…"
+                : courseMode
+                  ? "文字补充请在教材区记录"
+                  : disabled
+                    ? "已暂停，继续课堂后发送"
+                    : "输入英文，练习回答…"
           }
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}

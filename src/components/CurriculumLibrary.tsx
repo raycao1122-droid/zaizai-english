@@ -1,3 +1,5 @@
+import { unitCourse, type UnitLessonId } from "../data/unit1";
+import "./unit-course.css";
 import { useRef, useState } from "react";
 import {
   BookOpen,
@@ -17,6 +19,7 @@ import { assetUrl } from "../lib/assets";
 import "./curriculum-v2.css";
 
 export function CurriculumLibrary({
+  onLesson,
   materials,
   onAdd,
   onRemove,
@@ -25,6 +28,7 @@ export function CurriculumLibrary({
   selected,
   onSelect,
 }: {
+  onLesson?: (id: UnitLessonId | null) => void;
   materials: CurriculumMaterial[];
   onAdd: (items: CurriculumMaterial[]) => void;
   onRemove: (id: string) => void;
@@ -124,9 +128,9 @@ export function CurriculumLibrary({
             </button>
           ))}
           <p>
-            前端演示书架
+            第一单元已接入
             <br />
-            未接入教材与同步服务
+            其他条目为演示 / 云端同步未开放
           </p>
         </nav>
         <div className="shelf-main">
@@ -136,7 +140,9 @@ export function CurriculumLibrary({
               <span>LEARN WITH EMMA</span>
               <h3>选择教材，开始学习吧！</h3>
               <p>从熟悉的内容出发，发现每一天的小进步。</p>
-              <small>课程内容为示例，尚未根据教材生成教学内容。</small>
+              <small>
+                第一单元按教案教学；原书架示例和本地文件登记仍保留。
+              </small>
             </div>
             <BookOpen className="shelf-banner-book" size={75} />
           </div>
@@ -152,6 +158,38 @@ export function CurriculumLibrary({
             </label>
             <span>全部为示例条目或本页文件信息</span>
           </div>
+          {["推荐课程", "英语教材"].includes(category) && (
+            <section
+              className="unit-course-picker"
+              aria-label="已接入的第一单元"
+            >
+              <h3>Zaizai English · Unit 1</h3>
+              <p>真实教材四节课 · 教师教案已映射 · 学习记录仅本机保存</p>
+              <div className="unit-actions">
+                {unitCourse.lessons
+                  .filter((l) =>
+                    `${l.id} ${l.title} Zaizai English 第一单元`
+                      .toLowerCase()
+                      .includes(query.trim().toLowerCase()),
+                  )
+                  .map((l) => (
+                    <button
+                      key={l.id}
+                      className="soft-button"
+                      onClick={() => onLesson?.(l.id as UnitLessonId)}
+                    >
+                      {l.id} · {l.title}
+                    </button>
+                  ))}
+              </div>
+              <button className="soft-button" onClick={() => onLesson?.(null)}>
+                返回 Animals 示例课
+              </button>
+              <small>
+                课程包已接入；下方选择其他本地文件仍只登记信息，不自动解析。
+              </small>
+            </section>
+          )}
           {category === "推荐课程" && !query && (
             <section className="shelf-recent" aria-label="最近使用">
               <div className="shelf-section-title">

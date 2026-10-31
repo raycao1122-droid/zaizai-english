@@ -1,3 +1,4 @@
+import { resolveUnit1, evidenceFor } from "./unit1.mjs";
 import { createClassroomAccess } from "./access.mjs";
 import { randomBytes, timingSafeEqual, createHash } from "node:crypto";
 import { WebSocketServer, WebSocket } from "ws";
@@ -5,9 +6,13 @@ import { QwenRealtimeAdapter, QWEN_MODEL, qwenConfig } from "./adapters.mjs";
 
 export function safeContext(input) {
   if (!input || typeof input !== "object") return {};
+  const curriculum = resolveUnit1(input.curriculum);
   // Explicit fields only. No client prompt overrides, scores, tools or course mutations.
   return {
-    course: "Lesson 01 · Animals (demo course)",
+    ...(curriculum ? { curriculum } : {}),
+    course: curriculum
+      ? "Zaizai English · Unit 1 · " + curriculum.title
+      : "Lesson 01 · Animals (demo course)",
     stage: String(input.stage || "").slice(0, 80),
     prompt: String(input.prompt || "").slice(0, 300),
     target: String(input.target || "").slice(0, 30),
@@ -224,7 +229,11 @@ export function createVoiceGateway(
       if (req.method === "GET" && req.url === "/api/voice/config") {
         const data = providers();
         json(res, 200, {
-          capabilities: { teacherOpening: true, lessonSpeech: true },
+          capabilities: {
+            teacherOpening: true,
+            lessonSpeech: true,
+            unit1Teaching: true,
+          },
           providers: data.providers.map(
             ({ id, name, configured, status, implemented }) => ({
               id,
@@ -428,6 +437,10 @@ export function createVoiceGateway(
       const adapter = adapterFactory();
       const lease = { owner, end: null };
       active.set(adapter, lease);
+      let currentContext = grant.context,
+        lastTeacherText = "",
+        teacherTurnText = "";
+      const evidenceContexts = new Map();
       let live = false,
         muted = false,
         ended = false,
@@ -476,6 +489,36 @@ export function createVoiceGateway(
         if (muted || !live) return;
         if (ws.bufferedAmount > 1024 * 1024)
           return end("播放网络过慢，请重新连接。");
+        if (event.type === "response-started") teacherTurnText = "";
+        if (event.type === "subtitle-delta" && event.speaker === "Emma")
+          teacherTurnText = (teacherTurnText + (event.text || "")).slice(
+            0,
+            1000,
+          );
+        if (
+          event.type === "subtitle" &&
+          event.speaker === "Emma" &&
+          event.final
+        )
+          lastTeacherText = event.text || "";
+        if (event.type === "interrupted") {
+          evidenceContexts.set(
+            event.id || "current",
+            evidenceFor(currentContext, teacherTurnText || lastTeacherText),
+          );
+          if (evidenceContexts.size > 30)
+            evidenceContexts.delete(evidenceContexts.keys().next().value);
+        }
+        if (
+          event.type === "subtitle" &&
+          event.speaker === "在在" &&
+          event.final
+        ) {
+          const evidence = evidenceContexts.get(event.id || "current");
+          // Late ASR must retain the stage where the child spoke, never the later displayed stage.
+          if (evidence) event = { ...event, evidenceContext: evidence };
+          evidenceContexts.delete(event.id || "current");
+        }
         send(event);
       });
       ws.on("message", (raw) => {
@@ -495,12 +538,24 @@ export function createVoiceGateway(
           ) {
             lastAudioAt = Date.now();
             adapter.appendAudio(e.audio);
-          } else if (e.type === "context" && live)
-            adapter.updateContext(safeContext(e.context));
-          else if (e.type === "mute" && typeof e.muted === "boolean") {
+          } else if (e.type === "context" && live) {
+            currentContext = safeContext(e.context);
+            adapter.updateContext(currentContext);
+          } else if (e.type === "mute" && typeof e.muted === "boolean") {
             muted = e.muted;
             lastAudioAt = Date.now();
             adapter.mute();
+          } else if (e.type === "teach-stage" && live) {
+            if (muted)
+              send({ type: "notice", message: "请先取消静音，再继续教学。" });
+            else if (
+              !rate("teach-stage:" + owner, 6) ||
+              !adapter.teachStage?.()
+            )
+              send({
+                type: "notice",
+                message: "Emma 正在回答或尚未准备好，请稍后再试。",
+              });
           } else if (e.type === "lesson-speech" && live) {
             if (muted)
               send({

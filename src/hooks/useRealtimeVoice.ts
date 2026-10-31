@@ -44,8 +44,10 @@ function initialBackend() {
 export function useRealtimeVoice({
   context,
   onTranscript,
+  onUtterance,
 }: {
   context: VoiceContext;
+  onUtterance?: (event: VoiceEvent) => void;
   onTranscript: (message: {
     id: string;
     speaker: "Emma" | "在在";
@@ -58,6 +60,7 @@ export function useRealtimeVoice({
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState(false);
   const [lessonSpeech, setLessonSpeech] = useState(false);
+  const [unit1Teaching, setUnit1Teaching] = useState(false);
   const [status, setStatus] = useState<
     "disconnected" | "connecting" | "connected" | "error"
   >("disconnected");
@@ -83,8 +86,8 @@ export function useRealtimeVoice({
   const busy = useRef(false);
   const generation = useRef(0);
   const session = useRef(0);
-  const current = useRef({ context, onTranscript });
-  current.current = { context, onTranscript };
+  const current = useRef({ context, onTranscript, onUtterance });
+  current.current = { context, onTranscript, onUtterance };
   const transcript = useRef(new Map<string, string>());
   const selectedProvider = providers.find((p) => p.id === selected)!;
   const locked = status === "connected" || status === "connecting";
@@ -98,6 +101,7 @@ export function useRealtimeVoice({
         throw new Error("后端配置格式不正确。");
       setCatalogError(false);
       setLessonSpeech(result.capabilities?.lessonSpeech === true);
+      setUnit1Teaching(result.capabilities?.unit1Teaching === true);
       setMessage((previous) =>
         previous.startsWith("语音服务暂未响应")
           ? "语音服务已就绪 · 点击开始语音"
@@ -153,6 +157,10 @@ export function useRealtimeVoice({
     context.material,
     context.choices,
     context.hints,
+    context.curriculum?.lessonId,
+    context.curriculum?.stageId,
+    context.curriculum?.scenarioId,
+    context.curriculum?.hintLevel,
   ]);
   function select(id: ProviderId) {
     if (busy.current || locked) return;
@@ -332,6 +340,13 @@ export function useRealtimeVoice({
       setMessage("未配置：所选语音暂未开放，请选择其他模型。");
       return;
     }
+    if (current.current.context.curriculum && !unit1Teaching) {
+      setStatus("error");
+      setMessage(
+        "当前语音服务尚未更新第一单元教学，暂不能开始该教材的语音课。",
+      );
+      return;
+    }
     busy.current = true;
     const id = ++session.current;
     transcript.current.clear();
@@ -392,6 +407,8 @@ export function useRealtimeVoice({
         setMessage(e.message || "语音连接失败，请重试。");
         return;
       }
+      if (e.type === "subtitle" && e.speaker === "在在" && e.final && e.text)
+        current.current.onUtterance?.(e);
       if (e.type === "notice") {
         setMessage(e.message || "请稍后再试。");
         return;
@@ -476,6 +493,18 @@ export function useRealtimeVoice({
       next ? "已静音 · 不发送麦克风音频，Emma 播放已停止" : "已连接 · 正在聆听",
     );
   }
+  function teachStage() {
+    if (status !== "connected") {
+      void connect();
+      return;
+    }
+    if (!unit1Teaching || muted || replayElement.current) {
+      setMessage("请先停止回听、取消静音，并确认教材语音已就绪。");
+      return;
+    }
+    adapter.current?.updateContext(current.current.context);
+    adapter.current?.teachStage?.();
+  }
   function speakLesson(text = current.current.context.prompt) {
     if (loading) return;
     if (!lessonSpeech) {
@@ -502,6 +531,8 @@ export function useRealtimeVoice({
     loading,
     catalogError,
     lessonSpeech,
+    unit1Teaching,
+    teachStage,
     selectedProvider,
     base,
     status,

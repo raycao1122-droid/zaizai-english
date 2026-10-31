@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "stageLabels": {
+    "warmup": "热身诊断",
+    "context": "情境讲解",
+    "practice": "支架练习",
+    "mission": "迁移任务",
+    "wrap": "证据回顾"
+  },
+  "lessons": {
+    "L1": {
+      "pages": [
+        3,
+        4
+      ],
+      "goal": "问候、自报姓名、主动询问姓名及礼貌回应",
+      "question": "What's your name?",
+      "mission": "在新学校主动认识 Leo，再在生日会认识 Mia；不看完整句子问好、介绍名字并主动询问对方。",
+      "hint": "name，名字",
+      "stem": "My name is…",
+      "model": "Hello! I'm Zaizai. What's your name?",
+      "stages": [
+        "自然问 Hi, Zaizai. What's your name? 诊断已有表达；已会则减少重复，不把年龄回答当姓名。",
+        "呈现见面情境，一次引入 Hello、I'm、What's your name 中的一句；角色扮演，不连续照读整段对话。",
+        "先模仿，再遮住句子回答；辨别姓名问句与年龄问句，只在需要时逐级提示。",
+        "扮演 Leo 或 Mia 新同学，让孩子先问好、再主动询问姓名；换一个情境重新尝试。不提前说出答案。",
+        "仅根据实际对话回顾表达；指出一个改进点，没有证据就说尚未确认。"
+      ]
+    },
+    "L2": {
+      "pages": [
+        5,
+        6,
+        7
+      ],
+      "goal": "数字1—12、询问和回答年龄、Yes/No回应及反问",
+      "question": "How old are you?",
+      "mission": "生日采访：Leo 是教材里的虚构10岁人物，Mia是虚构9岁人物；请孩子主动采访，不要求提供真实生日或个人资料。",
+      "hint": "age，年龄",
+      "stem": "I'm…",
+      "model": "I'm nine. How old are you?",
+      "stages": [
+        "用姓名问答复习前课，再自然问年龄，观察是否混淆名字与年龄。",
+        "生日情境听懂 How old are you? 对比nine和ten，年龄nine只是教材示例，不强制孩子谎报自己的年龄。",
+        "数字1—12随机听辨，先九再扩展；一次读一个数字，不机械顺数。然后练Are you ten? 与Yes/No回应。",
+        "扮演Leo（10）或Mia（9），让孩子主动问年龄并回应；换新情境检验迁移，不提前给完整示范。",
+        "回顾姓名和年龄问句，引用真实回答；没有独立证据时不标记掌握。"
+      ]
+    },
+    "L3": {
+      "pages": [
+        8,
+        9,
+        10
+      ],
+      "goal": "介绍朋友并区分he/she、his/her",
+      "question": "Can you introduce Mia?",
+      "mission": "分别介绍虚构人物Leo和Mia，先在学校、再在生日会介绍朋友；不用真实同学个人资料。",
+      "hint": "Mia: girl；Leo: boy",
+      "stem": "This is my friend…",
+      "model": "This is my friend Mia. She is nine. Her name is Mia.",
+      "stages": [
+        "问候、姓名与年龄复习，每次只问一件事。",
+        "看Leo与Mia情境图，示范This is my friend；口头对比he/she，再引入his/her，避免只背语法定义。",
+        "随机选Leo或Mia，请孩子介绍；错误时指向人物对比，逐步撤掉完整句子。",
+        "让孩子在两个不同情境介绍虚构朋友，追问一个相关细节；不抢答、不显示答案。",
+        "回顾实际说过的人称表达，给一个具体改进点；不凭一次跟读认定掌握。"
+      ]
+    },
+    "L4": {
+      "pages": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "goal": "4—6轮自然交流、至少一次主动提问、跨情境运用",
+      "question": "Hello! Shall we meet a new friend?",
+      "mission": "学校欢迎日和生日会两个情境：孩子主动问好，交流姓名和年龄，介绍朋友并自然告别；不使用唯一固定台词。",
+      "hint": "name / age / friend",
+      "stem": "What…? / This is…",
+      "model": "Hello! I'm Zaizai. What's your name?",
+      "stages": [
+        "无提示自然暖场，等孩子主动开场；必要时只给最小帮助，不立刻显示整句。",
+        "学校欢迎日，Emma先扮新同学再扮Mia；用自然提问推进，一次一个问题，不照读PDF。",
+        "姓名、年龄和朋友介绍任务，根据真实回答追问；提供的帮助说明H0—H3，不把示范后的跟读当独立。",
+        "切换学校或生日会，进行4—6轮交流并观察孩子主动提问；按实际证据总结，不臆造评分。",
+        "仅用有记录的原话总结，区分独立/需要提示/待复核；测评等待书面判题或人工复核，不口头捏造分数。"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "id": "U1-Q1",
+      "lessonId": "L1",
+      "page": 13,
+      "prompt": "What’s your name?",
+      "options": [
+        "I'm Zaizai.",
+        "I'm nine."
+      ],
+      "answer": "I'm Zaizai.",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q2",
+      "lessonId": "L2",
+      "page": 13,
+      "prompt": "How old are you?",
+      "options": [
+        "I'm fine.",
+        "I'm nine."
+      ],
+      "answer": "I'm nine.",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q3",
+      "lessonId": "L3",
+      "page": 13,
+      "prompt": "Who’s she? (Mia)",
+      "options": [
+        "She is Mia.",
+        "He is Leo."
+      ],
+      "answer": "She is Mia.",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q4",
+      "lessonId": "L1",
+      "page": 13,
+      "prompt": "My ___ is Zaizai.",
+      "options": [
+        "name",
+        "old"
+      ],
+      "answer": "name",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q5",
+      "lessonId": "L2",
+      "page": 13,
+      "prompt": "I ___ nine.",
+      "options": [
+        "am",
+        "is"
+      ],
+      "answer": "am",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q6",
+      "lessonId": "L3",
+      "page": 13,
+      "prompt": "This ___ my friend.",
+      "options": [
+        "is",
+        "are"
+      ],
+      "answer": "is",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q7",
+      "lessonId": "L3",
+      "page": 13,
+      "prompt": "___ name is Leo.",
+      "options": [
+        "His",
+        "Her"
+      ],
+      "answer": "His",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q8",
+      "lessonId": "L3",
+      "page": 13,
+      "prompt": "___ is Mia.",
+      "options": [
+        "He",
+        "She"
+      ],
+      "answer": "She",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q9",
+      "lessonId": "L4",
+      "page": 13,
+      "prompt": "your / What’s / name / ?",
+      "options": [
+        "What's your name?",
+        "How old are you?"
+      ],
+      "answer": "What's your name?",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q10",
+      "lessonId": "L4",
+      "page": 13,
+      "prompt": "old / How / you / are / ?",
+      "options": [
+        "How old are you?",
+        "What's your name?"
+      ],
+      "answer": "How old are you?",
+      "answerPage": 17,
+      "kind": "written-choice"
+    },
+    {
+      "id": "U1-Q11",
+      "lessonId": "L4",
+      "page": 13,
+      "prompt": "is / my / This / friend / .",
+      "options": [
+        "This is my friend.",
+        "My friend this is."
+      ],
+      "answer": "This is my friend.",
+      "answerPage": 17,
+      "kind": "written-choice"
+    }
+  ]
+}

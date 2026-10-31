@@ -7,11 +7,13 @@ export function EmmaAvatar({
   mood,
   onMood,
   onAudio,
+  unitMode,
 }: {
   voice: VoiceState;
   mood: string;
   onMood: (mood: string) => void;
   onAudio: () => void;
+  unitMode?: boolean;
 }) {
   const moods = [
     { id: "speaking", label: "正在说话", Icon: Smile },
@@ -33,9 +35,9 @@ export function EmmaAvatar({
           <p>
             Hi, Zaizai!
             <br />
-            Let’s learn
+            {unitMode ? "Let’s talk" : "Let’s learn"}
             <br />
-            about animals!
+            {unitMode ? "in English!" : "about animals!"}
           </p>
           <button
             className="audio-button"
