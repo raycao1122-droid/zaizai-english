@@ -103,6 +103,17 @@ for (const [width, height] of [
         "src",
         /school_welcome/,
       );
+      await page
+        .getByRole("combobox", { name: "教学情境", exact: true })
+        .selectOption("birthday");
+      await expect(page.locator(".unit-scene-image img")).toHaveCount(0);
+      await page
+        .getByRole("combobox", { name: "提示等级", exact: true })
+        .selectOption("H3");
+      await expect(page.locator(".unit-scene-image img")).toHaveAttribute(
+        "src",
+        /birthday/,
+      );
     }
     await page
       .getByRole("button", { name: "学习记录（0）", exact: true })

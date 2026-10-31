@@ -22,8 +22,11 @@ export function stageImage(
   scenario: string,
   hint: HintLevel,
 ) {
-  if (stage === 1 || stage === 2) return unitLesson(id).sceneImage;
-  if (stage === 3 && hint !== "H0")
+  if (stage === 1 || (stage === 2 && hint === "H3"))
+    return unitLesson(id).sceneImage;
+  if (stage === 3 && hint === "H1" && scenario === "school")
+    return "assets/school_welcome.png";
+  if (stage === 3 && hint === "H3")
     return scenario === "birthday"
       ? "assets/birthday.png"
       : "assets/school_welcome.png";
