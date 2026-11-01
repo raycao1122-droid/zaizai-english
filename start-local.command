@@ -8,7 +8,7 @@ if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if (!((major === 20 && minor >= 19) || (major === 22 && minor >= 12) || major > 22)) { console.error("Node.js 版本较旧，请安装 Node.js 24 LTS。"); process.exit(1); }'
+node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if (major < 24 || (major === 24 && minor < 5)) { console.error("请安装 Node.js 24 LTS（24.5 或更新）。"); process.exit(1); }'
 
 lesson_port="${ZAIZAI_PORT:-5173}"
 if [[ ! "$lesson_port" =~ ^[0-9]+$ ]]; then
@@ -27,9 +27,5 @@ if [[ ! -x node_modules/.bin/vite || "$lesson_installed_hash" != "$lesson_lock_h
 fi
 
 echo "项目目录：$PWD"
-echo "课堂将在本机 http://127.0.0.1:$lesson_port 打开。"
-echo '保留这个终端窗口；按 Control+C 可停止。当前为 M2 模拟课堂。'
-if [[ "${ZAIZAI_NO_OPEN:-0}" != '1' ]]; then
-  node scripts/open-local-browser.mjs "$lesson_port" &
-fi
-exec npm run dev -- --port "$lesson_port" --strictPort
+echo '将启动当前第一单元课堂和本机语音后端；按 Control+C 一起停止。'
+exec npm run dev:local

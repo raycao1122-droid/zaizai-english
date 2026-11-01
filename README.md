@@ -2,7 +2,9 @@
 
 云端固定项目目录：`/workspace/zaizai-english`。迁移到电脑后，以你打开的 `zaizai-english` 本地文件夹为固定项目目录，保留同一个 Git 仓库及全部历史。后续不要重建一套项目，也不要改动旁边的 ContentFlow 或其他项目。
 
-课堂保留模型选择与语音控制；服务配置已移至后台，不再展示 AI 服务配置表单，原课堂默认仍为 M2 模拟模式。百炼服务端鉴权和会话配置已实测通过；公网语音后端已部署，课堂口令、Pages 跨域和百炼会话配置验证通过；真实音频和设备体验尚未验收，其他语音厂商未接入。
+当前默认进入 Zaizai English 第一单元L1，四节真实课按教案接入，Animals示例保留。语音需要运行支持第一单元的后端并配置百炼；自动发音评分与云同步尚未实现。最新范围见 UNIT1_DELIVERY.md 与 UNIT1_ENTRY_FIX.md。
+
+**Mac本地开发**见 [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)：使用同一Git项目，`bash start-local.command`会启动本机前后端；Key仅在本机`.env.local`配置，不随源码迁移。
 
 当前后台管理与设备授权见 [ADMIN_OPERATIONS.md](ADMIN_OPERATIONS.md)。原始交付见 [REALTIME_VOICE_DELIVERY.md](REALTIME_VOICE_DELIVERY.md)，后台部署历史见 [AI_SERVICE_SETUP.md](AI_SERVICE_SETUP.md)。用户已授权部署：新版前端发布成功；未购买服务或创建收费后端。
 

@@ -18,3 +18,5 @@
 - 用户于2026-10-31授权接入附件Zaizai Unit 1四节真实课，保留Animals示例。来源为curriculum/unit1/course.json、teacher-guide.md、teaching.json及provenance；使用服务端批准的课时/阶段，不接受浏览器自带教师指令。学习记录目前仅本机，最终ASR为待核对证据，书面知识检查与口语分开；发音评分和云同步未实现。H0独立能力需人工核实语音与无提示情况、同能力至少两个情境，带答案的讲解/支架阶段不得计独立。跨阶段ASR必须使用开始说话时的证据上下文。
 
 - 2026-11-01默认首页改为第一单元L1，旧空选择迁移不清除学习记录；明确选择Animals仍保留并持久化。可用`?course=L1`或`?course=animals`直接进入，初次载入后清除course参数以免锁住后续选择。不要将第一单元的教材弹窗主操作退回到Animals，也不要在语音后端尚未支持unit1Teaching时显示已开始授课。历史演示回归应显式进入Animals。
+
+- 用户于2026-11-01选择迁移到Mac本地继续开发。当前完整本机启动使用start-local.command或npm run dev:local，同时启动回环地址前端/后端并打开一次性设备授权；本机.env.local只放服务端凭据，不提交/打印/打包Key，不把云端密钥当成已迁移。启动与当前范围见LOCAL_DEVELOPMENT.md，不能把本机模式仍介绍为旧M2前端或自动切换当前云端执行环境。

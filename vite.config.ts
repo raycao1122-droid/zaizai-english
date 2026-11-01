@@ -4,6 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   base: process.env.PAGES_BASE_PATH || "/",
-  server: { proxy: { "/api": "http://127.0.0.1:8787" } },
+  server: {
+    proxy: {
+      "/api": `http://127.0.0.1:${process.env.ZAIZAI_API_PORT || "8787"}`,
+    },
+  },
   plugins: [react(), tailwindcss()],
 });

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:local": "node --use-env-proxy --use-system-ca scripts/dev-local.mjs",
     "build": "tsc -b && vite build",
     "build:offline": "tsc -b && node scripts/build-offline-preview.mjs",
     "test:offline": "node scripts/check-offline-preview.mjs",
