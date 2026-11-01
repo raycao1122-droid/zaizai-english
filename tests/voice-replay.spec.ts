@@ -346,7 +346,7 @@ test("start stays disabled until a slow service catalog has actually loaded", as
   await page.route("**/api/voice/session", (r) =>
     r.fulfill({ status: 401, json: { error: "当前设备尚未授权。" } }),
   );
-  await page.goto("/");
+  await page.goto("/?course=animals");
   await expect(
     page.getByRole("button", { name: "正在准备语音…", exact: true }),
   ).toBeDisabled();

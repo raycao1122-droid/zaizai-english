@@ -13,7 +13,7 @@ export async function waitForArtwork(page: Page) {
 }
 
 export async function openReady(page: Page) {
-  await page.goto("/");
+  await page.goto("/?course=animals");
   await expect(
     page.getByRole("heading", { name: "Welcome to our English class!" }),
   ).toBeVisible();

@@ -74,7 +74,7 @@ try {
     if (response.status() >= 400)
       badResponses.push(`${response.status()} ${response.url()}`);
   });
-  await page.goto(origin + prefix);
+  await page.goto(origin + prefix + "?course=animals");
   await page
     .getByRole("heading", { name: "Welcome to our English class!" })
     .waitFor();

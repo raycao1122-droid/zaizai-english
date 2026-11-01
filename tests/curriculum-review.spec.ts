@@ -45,7 +45,9 @@ for (const [width, height] of [
     for (const control of [close, keep, restart])
       await expect(control).toBeInViewport({ ratio: 1 });
     if (width >= 1024)
-      await expect(dialog.locator(".shelf-choose").first()).toBeInViewport({
+      await expect(
+        dialog.getByRole("button", { name: /^L1 · / }),
+      ).toBeInViewport({
         ratio: 1,
       });
     await waitForArtwork(page);
@@ -92,13 +94,11 @@ for (const [width, height] of [
     await expect(dialog.locator(".material-preview")).toContainText(
       "真实教材解析尚未接入",
     );
-    await dialog
-      .getByLabel("选择教材文件")
-      .setInputFiles({
-        name: "验收资料.pdf",
-        mimeType: "application/pdf",
-        buffer: Buffer.alloc(2048),
-      });
+    await dialog.getByLabel("选择教材文件").setInputFiles({
+      name: "验收资料.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.alloc(2048),
+    });
     await expect(dialog.locator(".library-message")).toContainText(
       "未上传、未解析",
     );

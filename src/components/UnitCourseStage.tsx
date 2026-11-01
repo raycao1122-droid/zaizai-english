@@ -15,11 +15,17 @@ export function UnitCourseStage({
   onStart,
   onTeach,
   voiceStatus,
+  voiceReady,
+  voiceLoading,
+  voiceConnected,
 }: {
   unit: UnitCourseState;
   onStart: () => void;
   onTeach: () => void;
   voiceStatus: string;
+  voiceReady?: boolean;
+  voiceLoading?: boolean;
+  voiceConnected?: boolean;
 }) {
   const [showRecords, setShowRecords] = useState(false);
   const [showChecks, setShowChecks] = useState(false);
@@ -87,14 +93,25 @@ export function UnitCourseStage({
       </div>
       <h1>{lesson.title}</h1>
       <p>{plan.goal}</p>
+      {!voiceLoading && !voiceReady && (
+        <p className="unit-voice-warning" role="alert">
+          当前课时教材已载入，但 AI 语音教学尚未就绪，未开始授课。{voiceStatus}
+        </p>
+      )}
       <div className="unit-actions">
         <button
           className="primary-button"
           onClick={onStart}
-          disabled={!unit.paused}
+          disabled={!unit.paused || voiceLoading}
         >
           {" "}
-          {!unit.paused ? "学习中" : p.visited.length ? "继续学习" : "开始学习"}
+          {!unit.paused
+            ? voiceConnected
+              ? "学习中"
+              : "课件已准备 · 语音未连接"
+            : p.visited.length
+              ? "继续学习"
+              : "开始学习"}
         </button>
         <button
           className="soft-button"

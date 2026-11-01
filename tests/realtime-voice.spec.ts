@@ -106,7 +106,7 @@ test("one-time access link is exchanged once in StrictMode and removed from URL,
     expect(r.request().postDataJSON()).toEqual({ grant: "test-device-invite" });
     return r.fulfill({ json: { token: "test-only-grant-access-token" } });
   });
-  await page.goto("/#classroom-access=test-device-invite");
+  await page.goto("/?course=animals#classroom-access=test-device-invite");
   await expect(page.locator(".voice-connection-status")).toContainText(
     "语音已就绪",
   );

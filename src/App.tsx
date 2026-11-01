@@ -235,6 +235,14 @@ export default function App() {
   }
   function startUnit() {
     if (!unit.id) return;
+    if (realtime.loading) {
+      setToast("正在准备语音服务，请稍候再开始学习。");
+      return;
+    }
+    if (!realtime.unit1Teaching || !realtime.selectedProvider.configured) {
+      void realtime.connect();
+      return;
+    }
     unit.start();
     if (state.paused) dispatch({ type: "pause" });
     void realtime.connect();
@@ -379,6 +387,12 @@ export default function App() {
                     },
                   }}
                   onStart={startUnit}
+                  voiceReady={
+                    realtime.unit1Teaching &&
+                    realtime.selectedProvider.configured
+                  }
+                  voiceConnected={realtime.status === "connected"}
+                  voiceLoading={realtime.loading}
                   onTeach={() => realtime.teachStage()}
                   voiceStatus={realtime.message}
                 />
@@ -569,25 +583,38 @@ export default function App() {
                   >
                     继续本次课堂
                   </button>
-                  <button
-                    className="primary-button"
-                    onClick={() => {
-                      selectUnit(null);
-                      dispatch({ type: "reset" });
-                      aiRequest.current?.abort();
-                      setAiBusy(false);
-                      setReportSession(mockHistory[0]);
-                      setReportFromArchive(false);
-                      setArchiveView(createArchiveView());
-                      setModal(null);
-                    }}
-                  >
-                    从头演示 Animals 示例课
-                  </button>
+                  {unit.id ? (
+                    <button
+                      className="primary-button"
+                      onClick={() => {
+                        setModal(null);
+                        if (unit.paused) startUnit();
+                      }}
+                    >
+                      开始 / 继续 {unit.id} · {unitInfo?.title}
+                    </button>
+                  ) : (
+                    <button
+                      className="primary-button"
+                      onClick={() => {
+                        selectUnit(null);
+                        dispatch({ type: "reset" });
+                        aiRequest.current?.abort();
+                        setAiBusy(false);
+                        setReportSession(mockHistory[0]);
+                        setReportFromArchive(false);
+                        setArchiveView(createArchiveView());
+                        setModal(null);
+                      }}
+                    >
+                      从头演示 Animals 示例课
+                    </button>
+                  )}
                 </div>
                 <p className="shelf-footer-note">
-                  从头演示会清空 Animals
-                  草稿和笔记；第一单元可在已接入课时中选择，其他本地资料尚未解析。
+                  {unit.id
+                    ? `当前课时：${unit.id} · ${unitInfo?.title}。Animals 示例课仍可从课程列表选择。`
+                    : "从头演示只重置 Animals；第一单元请在上方选择课时。"}
                 </p>
               </>
             ) : undefined

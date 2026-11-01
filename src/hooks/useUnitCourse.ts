@@ -32,13 +32,15 @@ type Check = { id: string; answer: string; at: string };
 type Data = {
   version: 1;
   selected: UnitLessonId | null;
+  explicitDemo: boolean;
   progress: Partial<Record<UnitLessonId, Progress>>;
   records: UnitRecord[];
   checks: Check[];
 };
 const empty = (): Data => ({
   version: 1,
-  selected: null,
+  selected: "L1",
+  explicitDemo: false,
   progress: {},
   records: [],
   checks: [],
@@ -50,11 +52,24 @@ const fresh = (): Progress => ({
   visited: [],
 });
 function load(): Data {
+  const request = new URLSearchParams(location.search).get("course");
+  function requested(value: Data) {
+    if (isUnitLesson(request))
+      return { ...value, selected: request, explicitDemo: false };
+    if (request === "animals")
+      return { ...value, selected: null, explicitDemo: true };
+    return value;
+  }
   try {
     const d = JSON.parse(localStorage.getItem(UNIT_RECORD_KEY) || "null");
-    if (d?.version !== 1) return empty();
+    if (d?.version !== 1) return requested(empty());
     const value = empty();
-    value.selected = isUnitLesson(d.selected) ? d.selected : null;
+    value.explicitDemo = d.explicitDemo === true;
+    value.selected = isUnitLesson(d.selected)
+      ? d.selected
+      : value.explicitDemo
+        ? null
+        : "L1";
     for (const id of ["L1", "L2", "L3", "L4"] as UnitLessonId[]) {
       const p = d.progress?.[id];
       if (
@@ -101,9 +116,9 @@ function load(): Data {
           )
           .slice(-200)
       : [];
-    return value;
+    return requested(value);
   } catch {
-    return empty();
+    return requested(empty());
   }
 }
 export function useUnitCourse() {
@@ -112,6 +127,13 @@ export function useUnitCourse() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [storageError, setStorageError] = useState(false);
+  useEffect(() => {
+    const url = new URL(location.href);
+    if (url.searchParams.has("course")) {
+      url.searchParams.delete("course");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  }, []);
   useEffect(() => {
     try {
       localStorage.setItem(UNIT_RECORD_KEY, JSON.stringify(data));
@@ -126,7 +148,7 @@ export function useUnitCourse() {
     setPaused(true);
     setMessages([]);
     setDraft("");
-    setData((d) => ({ ...d, selected: lesson }));
+    setData((d) => ({ ...d, selected: lesson, explicitDemo: lesson === null }));
   }
   function change(patch: Partial<Progress>) {
     if (!id || paused) return;

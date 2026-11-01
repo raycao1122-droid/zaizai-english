@@ -34,7 +34,7 @@ try {
     if (/^https?:/.test(req.url()) && !req.url().startsWith(origin + "/")) external.push(req.url());
     if (["POST", "PUT"].includes(req.method())) uploads.push(req.url());
   });
-  await page.goto(origin);
+  await page.goto(origin + "/?course=animals");
   await expect(page.getByRole("heading", { name: "Welcome to our English class!" })).toBeVisible();
   const next = () => page.locator(".voice-bar").getByRole("button", { name: "下一步", exact: true }).click();
   const images = () => page.evaluate(async () => {

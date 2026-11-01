@@ -197,3 +197,12 @@
 .curriculum-modal .modal-body {
   contain: paint;
 }
+.unit-voice-warning {
+  padding: 12px 14px;
+  border: 1px solid #f0cc80;
+  background: #fff8e8;
+  border-radius: 12px;
+  color: #825b16;
+  font-size: 13px;
+  line-height: 1.65;
+}
